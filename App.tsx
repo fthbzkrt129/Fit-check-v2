@@ -182,7 +182,7 @@ const App: React.FC = () => {
 
     try {
       const newImageUrl = await generateVirtualTryOnImage(displayImageUrl, garmentFile, activeCategory, selectedTopLength);
-      const currentPoseInstruction = POSE_LABELS[currentPoseIndex];
+      const currentPoseInstruction = POSE_INSTRUCTIONS[currentPoseIndex];
 
       const newLayer: OutfitLayer = {
         garment: { ...garmentInfo, category: activeCategory },
@@ -247,7 +247,7 @@ const App: React.FC = () => {
   const handlePoseSelect = useCallback(async (newIndex: number) => {
     if (isLoading || outfitHistory.length === 0 || newIndex === currentPoseIndex) return;
     
-    const poseInstruction = POSE_LABELS[newIndex];
+    const poseInstruction = POSE_INSTRUCTIONS[newIndex];
     const currentLayer = outfitHistory[currentOutfitIndex];
 
     // If no scene is selected and pose already exists, just update the index to show it.
@@ -299,27 +299,13 @@ const App: React.FC = () => {
   }, [currentPoseIndex, outfitHistory, isLoading, currentOutfitIndex, selectedSceneVariation]);
 
   const handleCategorySelect = useCallback((nextCategory: GarmentCategory) => {
-    const nextOrder = ['top', 'bottom', 'footwear', 'accessory'] as const;
-    const highestUnlockedIndex = Math.min(completedCategories.length, nextOrder.length - 1);
-    const nextCategoryIndex = nextOrder.indexOf(nextCategory);
-
-    if (!isCategorySelectionAllowed(activeCategory, nextCategory, selectedTopLength)) {
-      setError('Üst giyim için ürün boyu seçmeden sonraki adıma geçemezsiniz.');
-      return;
-    }
-
-    if (nextCategoryIndex > highestUnlockedIndex) {
-      setError(`${CATEGORY_LABELS[nextCategory]} adımı henüz açılmadı.`);
-      return;
-    }
-
     setError(null);
     setActiveCategory(nextCategory);
-  }, [activeCategory, selectedTopLength, completedCategories]);
+  }, []);
 
   const handleGenerateScene = useCallback(async () => {
     const currentLayer = outfitHistory[currentOutfitIndex];
-    const sceneBaseImageUrl = getSceneGenerationBaseImage(currentLayer, POSE_LABELS[currentPoseIndex]);
+    const sceneBaseImageUrl = getSceneGenerationBaseImage(currentLayer, POSE_INSTRUCTIONS[currentPoseIndex]);
     if (!sceneBaseImageUrl || !selectedScene || !selectedLighting || isLoading) return;
 
     setError(null);
@@ -334,7 +320,7 @@ const App: React.FC = () => {
         scene: selectedScene,
         lighting: selectedLighting,
         imageUrl,
-        sourcePose: POSE_LABELS[currentPoseIndex],
+        sourcePose: POSE_INSTRUCTIONS[currentPoseIndex],
         createdAt: Date.now(),
         qualityMode: sceneQualityMode,
       };
