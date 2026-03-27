@@ -1,0 +1,215 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+*/
+
+import { GoogleGenAI, GenerateContentResponse, Modality } from "@google/genai";
+import type { GarmentCategory, LightingOption, SceneOption, SceneQualityMode, TopLengthOption } from '../types';
+
+const fileToPart = async (file: File) => {
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = error => reject(error);
+    });
+    const { mimeType, data } = dataUrlToParts(dataUrl);
+    return { inlineData: { mimeType, data } };
+};
+
+const dataUrlToParts = (dataUrl: string) => {
+    const arr = dataUrl.split(',');
+    if (arr.length < 2) throw new Error("Invalid data URL");
+    const mimeMatch = arr[0].match(/:(.*?);/);
+    if (!mimeMatch || !mimeMatch[1]) throw new Error("Could not parse MIME type from data URL");
+    return { mimeType: mimeMatch[1], data: arr[1] };
+}
+
+const dataUrlToPart = (dataUrl: string) => {
+    const { mimeType, data } = dataUrlToParts(dataUrl);
+    return { inlineData: { mimeType, data } };
+}
+
+const handleApiResponse = (response: GenerateContentResponse): string => {
+    if (response.promptFeedback?.blockReason) {
+        const { blockReason, blockReasonMessage } = response.promptFeedback;
+        const errorMessage = `Request was blocked. Reason: ${blockReason}. ${blockReasonMessage || ''}`;
+        throw new Error(errorMessage);
+    }
+
+    // Find the first image part in any candidate
+    for (const candidate of response.candidates ?? []) {
+        const imagePart = candidate.content?.parts?.find(part => part.inlineData);
+        if (imagePart?.inlineData) {
+            const { mimeType, data } = imagePart.inlineData;
+            return `data:${mimeType};base64,${data}`;
+        }
+    }
+
+    const finishReason = response.candidates?.[0]?.finishReason;
+    if (finishReason && finishReason !== 'STOP') {
+        const errorMessage = `Image generation stopped unexpectedly. Reason: ${finishReason}. This often relates to safety settings.`;
+        throw new Error(errorMessage);
+    }
+    const textFeedback = response.text?.trim();
+    const errorMessage = `The AI model did not return an image. ` + (textFeedback ? `The model responded with text: "${textFeedback}"` : "This can happen due to safety filters or if the request is too complex. Please try a different image.");
+    throw new Error(errorMessage);
+};
+
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
+const model = 'gemini-2.5-flash-image';
+
+const sceneDescriptions: Record<SceneOption, string> = {
+    studio: 'a clean premium fashion studio set with a minimal editorial backdrop',
+    cafe: 'an upscale lifestyle cafe interior with tasteful decor and depth',
+    street: 'a modern urban fashion street scene with premium editorial energy',
+    'luxury room': 'an elegant luxury interior reminiscent of a designer suite',
+};
+
+const lightingDescriptions: Record<LightingOption, string> = {
+    'soft daylight': 'soft balanced daylight with flattering natural skin tones',
+    'golden hour': 'warm golden hour lighting with a premium lifestyle glow',
+    dramatic: 'directional dramatic lighting with contrast and fashion depth',
+    editorial: 'high-end editorial fashion lighting with polished highlights and controlled shadows',
+};
+
+export const getSceneModelName = (mode: SceneQualityMode) =>
+    mode === 'pro' ? 'gemini-3.1-flash-image-preview' : 'gemini-2.5-flash-image';
+
+export const buildScenePrompt = (
+    scene: SceneOption,
+    lighting: LightingOption,
+    mode: SceneQualityMode,
+) => {
+    const sceneDirection = sceneDescriptions[scene];
+    const lightingDirection = lightingDescriptions[lighting];
+
+    if (mode === 'pro') {
+        return `You are an expert luxury fashion campaign photographer AI. You will receive an existing fashion try-on image.
+
+Your job is to preserve the same model identity, same outfit and fit, same garment boundaries and proportions, and the same overall framing and composition while transforming only the environment and lighting in a more premium, believable way.
+
+Scene direction: ${sceneDirection}.
+Lighting direction: ${lightingDirection}.
+
+Rules:
+1. Preserve the same model identity, face, hair, body proportions, and pose.
+2. Preserve the same outfit and fit, including garment edges, lengths, colors, materials, and visible accessories.
+3. Preserve the same overall framing and composition. Do not crop, zoom, or change camera distance.
+4. Do not redesign or restyle the outfit.
+5. Replace only the environment and lighting with a more premium, realistic editorial result.
+6. Keep the result photorealistic, refined, and commercially usable.
+7. Return ONLY the final image.`;
+    }
+
+    return `You are an expert fashion campaign photographer AI. You will receive an existing fashion try-on image.
+
+Your job is to keep the same person, same outfit, same fit, same garment colors, same styling, and same overall composition focus while transforming only the environment and lighting.
+
+Scene direction: ${sceneDirection}.
+Lighting direction: ${lightingDirection}.
+
+Rules:
+1. Preserve the person's identity, face, hair, body proportions, and pose.
+2. Preserve the clothing design, silhouette, fabric appearance, colors, and all visible accessories.
+3. Do not redesign or replace the outfit.
+4. Change the background and environmental styling to match the requested scene.
+5. Apply the requested lighting consistently across the subject and environment.
+6. Keep the result photorealistic, premium, and suitable for a fashion e-commerce/editorial experience.
+7. Return ONLY the final image.`;
+};
+
+export const generateModelImage = async (userImage: File): Promise<string> => {
+    const userImagePart = await fileToPart(userImage);
+    const prompt = "You are an expert fashion photographer AI. Transform the person in this image into a full-body fashion model photo suitable for an e-commerce website. The background must be a clean, neutral studio backdrop (light gray, #f0f0f0). The person should have a neutral, professional model expression. Preserve the person's identity, unique features, and body type, but place them in a standard, relaxed standing model pose. The final image must be photorealistic. Return ONLY the final image.";
+    const response = await ai.models.generateContent({
+        model,
+        contents: { parts: [userImagePart, { text: prompt }] },
+        config: {
+            responseModalities: [Modality.IMAGE, Modality.TEXT],
+        },
+    });
+    return handleApiResponse(response);
+};
+
+export const buildGarmentInstructions = (category: GarmentCategory, topLength?: TopLengthOption | null) => {
+    if (category === 'top') {
+        const topLengthInstructions: Record<TopLengthOption, string> = {
+            crop: 'The top must end above the waist in a clear cropped proportion.',
+            waist: 'The top must end around the waist.',
+            hip: 'The top must extend to hip length.',
+            tunic: 'The top must read as a tunic length top and extend below the hips, but it must not become a dress.',
+        };
+
+        return `Replace only the upper-body garment. Keep any visible lower-body garment intact. ${topLength ? topLengthInstructions[topLength] : 'The top must keep a realistic top-garment length.'}`;
+    }
+
+    if (category === 'bottom') {
+        return 'Replace only the lower-body garment. Keep the upper-body garment intact and visible. Preserve the full-body framing from head to toe. Do not crop the model. Do not change the aspect ratio or camera distance.';
+    }
+
+    if (category === 'footwear') {
+        return 'Replace only the footwear on the feet and keep the existing pants or leg silhouette intact. Match sole contact, foot angle, and ground shadow naturally. Preserve the full-body framing from head to toe. Do not crop above the ankles. Do not change the aspect ratio or camera distance.';
+    }
+
+    return 'Add the accessory naturally in the correct wearing position without altering the rest of the outfit. Preserve the clothing silhouette and place the accessory where it would realistically be worn or carried. Preserve the full-body framing from head to toe. Do not crop the model. Do not change the aspect ratio or camera distance.';
+};
+
+export const generateVirtualTryOnImage = async (
+    modelImageUrl: string,
+    garmentImage: File,
+    category: GarmentCategory = 'top',
+    topLength?: TopLengthOption | null,
+): Promise<string> => {
+    const modelImagePart = dataUrlToPart(modelImageUrl);
+    const garmentImagePart = await fileToPart(garmentImage);
+    const prompt = `You are an expert virtual try-on AI. You will be given a 'model image' and a 'garment image'. Your task is to create a new photorealistic image where the person from the 'model image' is wearing the clothing from the 'garment image'.
+
+Category-specific instruction: ${buildGarmentInstructions(category, topLength)}
+
+**Crucial Rules:**
+1.  Change only the area relevant to the garment category.
+2.  Preserve the person's face, hair, body shape, and pose from the 'model image'.
+3.  Preserve the entire background from the 'model image'.
+4.  Fit the garment naturally with realistic folds, shadows, and lighting consistent with the original scene.
+5.  Return ONLY the final edited image.`;
+    const response = await ai.models.generateContent({
+        model,
+        contents: { parts: [modelImagePart, garmentImagePart, { text: prompt }] },
+        config: {
+            responseModalities: [Modality.IMAGE, Modality.TEXT],
+        },
+    });
+    return handleApiResponse(response);
+};
+
+export const generatePoseVariation = async (tryOnImageUrl: string, poseInstruction: string): Promise<string> => {
+    const tryOnImagePart = dataUrlToPart(tryOnImageUrl);
+    const prompt = `You are an expert fashion photographer AI. Take this image and regenerate it from a different perspective. The person, clothing, and background style must remain identical. The new perspective should be: "${poseInstruction}". Return ONLY the final image.`;
+    const response = await ai.models.generateContent({
+        model,
+        contents: { parts: [tryOnImagePart, { text: prompt }] },
+        config: {
+            responseModalities: [Modality.IMAGE, Modality.TEXT],
+        },
+    });
+    return handleApiResponse(response);
+};
+
+export const generateSceneVariation = async (
+    baseImageUrl: string,
+    scene: SceneOption,
+    lighting: LightingOption,
+    mode: SceneQualityMode = 'fast',
+): Promise<string> => {
+    const baseImagePart = dataUrlToPart(baseImageUrl);
+    const prompt = buildScenePrompt(scene, lighting, mode);
+    const response = await ai.models.generateContent({
+        model: getSceneModelName(mode),
+        contents: { parts: [baseImagePart, { text: prompt }] },
+        config: {
+            responseModalities: [Modality.IMAGE, Modality.TEXT],
+        },
+    });
+    return handleApiResponse(response);
+};
