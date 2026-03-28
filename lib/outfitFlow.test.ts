@@ -2,12 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { getNextCategory, isCategorySelectionAllowed } from './outfitFlow';
 
 describe('outfitFlow', () => {
-  it('requires top length before leaving top category', () => {
-    expect(isCategorySelectionAllowed('top', 'bottom', null)).toBe(false);
-    expect(isCategorySelectionAllowed('top', 'bottom', 'hip')).toBe(true);
+  it('allows switching freely between categories regardless of top length', () => {
+    expect(isCategorySelectionAllowed('top', 'bottom', null)).toBe(true);
+    expect(isCategorySelectionAllowed('top', 'accessory', null)).toBe(true);
+    expect(isCategorySelectionAllowed('bottom', 'top', null)).toBe(true);
   });
 
-  it('advances from top to bottom after top garment is added', () => {
+  it('still returns the next category helper values for existing flows', () => {
     expect(getNextCategory('top')).toBe('bottom');
     expect(getNextCategory('bottom')).toBe('footwear');
   });

@@ -8,7 +8,7 @@ export const getSceneGenerationBaseImage = (
     return null;
   }
 
-  return layer.poseImages[poseInstruction] ?? Object.values(layer.poseImages)[0] ?? null;
+  return layer.poseImages[poseInstruction] ?? layer.baseSourceImageUrl ?? Object.values(layer.poseImages)[0] ?? null;
 };
 
 export const getPoseGenerationBaseImage = (
@@ -23,7 +23,7 @@ export const getPoseGenerationBaseImage = (
     return null;
   }
 
-  return Object.values(layer.poseImages)[0] ?? null;
+  return layer.poseSourceImageUrl ?? layer.baseSourceImageUrl ?? Object.values(layer.poseImages)[0] ?? null;
 };
 
 export const addSceneVariationWithLimit = (

@@ -12,10 +12,6 @@ export const isCategorySelectionAllowed = (
   nextCategory: GarmentCategory,
   selectedTopLength: TopLengthOption | null,
 ): boolean => {
-  if (activeCategory === 'top' && nextCategory !== 'top' && !selectedTopLength) {
-    return false;
-  }
-
   return true;
 };
 

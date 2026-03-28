@@ -29,6 +29,9 @@ import Spinner from './components/Spinner';
 const POSE_INSTRUCTIONS = POSE_OPTIONS.map((pose) => pose.instruction);
 const POSE_LABELS = POSE_OPTIONS.map((pose) => pose.label);
 
+const getPoseInstructionByIndex = (index: number) => POSE_INSTRUCTIONS[index];
+const getPoseLabelByIndex = (index: number) => POSE_LABELS[index];
+
 const useMediaQuery = (query: string): boolean => {
   const [matches, setMatches] = useState(() => window.matchMedia(query).matches);
 
@@ -131,6 +134,8 @@ const App: React.FC = () => {
     setModelImageUrl(url);
     setOutfitHistory([{
       garment: null,
+      category: 'base',
+      baseSourceImageUrl: url,
       poseImages: { [POSE_INSTRUCTIONS[0]]: url }
     }]);
     setCurrentOutfitIndex(0);
@@ -182,7 +187,7 @@ const App: React.FC = () => {
 
     try {
       const newImageUrl = await generateVirtualTryOnImage(displayImageUrl, garmentFile, activeCategory, selectedTopLength);
-      const currentPoseInstruction = POSE_INSTRUCTIONS[currentPoseIndex];
+      const currentPoseInstruction = getPoseInstructionByIndex(currentPoseIndex);
 
       const newLayer: OutfitLayer = {
         garment: { ...garmentInfo, category: activeCategory },
@@ -246,8 +251,8 @@ const App: React.FC = () => {
 
   const handlePoseSelect = useCallback(async (newIndex: number) => {
     if (isLoading || outfitHistory.length === 0 || newIndex === currentPoseIndex) return;
-    
-    const poseInstruction = POSE_INSTRUCTIONS[newIndex];
+
+    const poseInstruction = getPoseInstructionByIndex(newIndex);
     const currentLayer = outfitHistory[currentOutfitIndex];
 
     // If no scene is selected and pose already exists, just update the index to show it.
@@ -256,13 +261,19 @@ const App: React.FC = () => {
       return;
     }
 
-    const baseImageForPoseChange = getPoseGenerationBaseImage(selectedSceneVariation, currentLayer);
+    const frozenPoseSourceImageUrl = !selectedSceneVariation && !currentLayer.poseSourceImageUrl
+      ? displayImageUrl
+      : currentLayer.poseSourceImageUrl;
+
+    const baseImageForPoseChange = selectedSceneVariation
+      ? getPoseGenerationBaseImage(selectedSceneVariation, currentLayer)
+      : frozenPoseSourceImageUrl ?? getPoseGenerationBaseImage(null, currentLayer);
     if (!baseImageForPoseChange) return; // Should not happen
 
     setError(null);
     setIsLoading(true);
     setLoadingMessage(`Changing pose...`);
-    
+
     const prevPoseIndex = currentPoseIndex;
     // Optimistically update the pose index so the pose name changes in the UI
     setCurrentPoseIndex(newIndex);
@@ -272,6 +283,9 @@ const App: React.FC = () => {
       setOutfitHistory(prevHistory => {
         const newHistory = [...prevHistory];
         const updatedLayer = newHistory[currentOutfitIndex];
+        if (!selectedSceneVariation && frozenPoseSourceImageUrl && !updatedLayer.poseSourceImageUrl) {
+          updatedLayer.poseSourceImageUrl = frozenPoseSourceImageUrl;
+        }
         updatedLayer.poseImages[poseInstruction] = newImageUrl;
         return newHistory;
       });
@@ -305,7 +319,7 @@ const App: React.FC = () => {
 
   const handleGenerateScene = useCallback(async () => {
     const currentLayer = outfitHistory[currentOutfitIndex];
-    const sceneBaseImageUrl = getSceneGenerationBaseImage(currentLayer, POSE_INSTRUCTIONS[currentPoseIndex]);
+    const sceneBaseImageUrl = getSceneGenerationBaseImage(currentLayer, getPoseInstructionByIndex(currentPoseIndex));
     if (!sceneBaseImageUrl || !selectedScene || !selectedLighting || isLoading) return;
 
     setError(null);
@@ -320,7 +334,7 @@ const App: React.FC = () => {
         scene: selectedScene,
         lighting: selectedLighting,
         imageUrl,
-        sourcePose: POSE_INSTRUCTIONS[currentPoseIndex],
+        sourcePose: getPoseInstructionByIndex(currentPoseIndex),
         createdAt: Date.now(),
         qualityMode: sceneQualityMode,
       };

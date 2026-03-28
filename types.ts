@@ -18,6 +18,8 @@ export interface WardrobeItem {
 
 export interface OutfitLayer {
   garment: WardrobeItem | null; // null represents the base model layer
+  baseSourceImageUrl?: string;
+  poseSourceImageUrl?: string;
   poseImages: Record<string, string>; // Maps pose instruction to image URL
   category: GarmentCategory | 'base';
   topLength?: TopLengthOption | null;
