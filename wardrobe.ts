@@ -22,6 +22,27 @@ export const defaultWardrobe: WardrobeItem[] = [
     source: 'system',
   },
   {
+    id: 'dress-summer-1',
+    name: 'Summer Dress',
+    url: 'https://images.unsplash.com/photo-1595777707802-c2d5ef27a86e?auto=format&fit=crop&w=600&q=80',
+    category: 'dress',
+    source: 'system',
+  },
+  {
+    id: 'dress-elegant-1',
+    name: 'Elegant Dress',
+    url: 'https://images.unsplash.com/photo-1612336307429-8a88e8d08dbb?auto=format&fit=crop&w=600&q=80',
+    category: 'dress',
+    source: 'system',
+  },
+  {
+    id: 'dress-casual-1',
+    name: 'Casual Dress',
+    url: 'https://images.unsplash.com/photo-1608408541694-ba6d45b92d6d?auto=format&fit=crop&w=600&q=80',
+    category: 'dress',
+    source: 'system',
+  },
+  {
     id: 'system-bag-1',
     name: 'Classic Bag',
     url: 'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?auto=format&fit=crop&w=600&q=80',
