@@ -22,9 +22,10 @@ interface CanvasProps {
   canRedo: boolean;
   onUndo: () => void;
   onRedo: () => void;
+  onRegenerate: () => void;
 }
 
-const Canvas: React.FC<CanvasProps> = ({ displayImageUrl, onStartOver, onDownload, canDownload, isLoading, loadingMessage, onSelectPose, poseInstructions, currentPoseIndex, availablePoseKeys, canUndo, canRedo, onUndo, onRedo }) => {
+const Canvas: React.FC<CanvasProps> = ({ displayImageUrl, onStartOver, onDownload, canDownload, isLoading, loadingMessage, onSelectPose, poseInstructions, currentPoseIndex, availablePoseKeys, canUndo, canRedo, onUndo, onRedo, onRegenerate }) => {
   const [isPoseMenuOpen, setIsPoseMenuOpen] = useState(false);
   
   const handlePreviousPose = () => {
@@ -95,6 +96,16 @@ const Canvas: React.FC<CanvasProps> = ({ displayImageUrl, onStartOver, onDownloa
         >
             <Redo2Icon className="w-4 h-4 mr-1.5" />
             Yinele
+        </button>
+        <button
+            onClick={onRegenerate}
+            disabled={isLoading || !displayImageUrl}
+            className="flex items-center justify-center text-center bg-white/60 border border-gray-300/80 text-gray-700 font-semibold py-2 px-4 rounded-full transition-all duration-200 ease-in-out hover:bg-white hover:border-gray-400 active:scale-95 text-sm backdrop-blur-sm disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white/60 disabled:hover:border-gray-300/80 disabled:active:scale-100"
+            aria-label="Regenerate"
+            title="Render'ı tekrar üret"
+        >
+            <RotateCcwIcon className="w-4 h-4 mr-1.5" />
+            Yeniden Üret
         </button>
         <button 
             onClick={onStartOver}

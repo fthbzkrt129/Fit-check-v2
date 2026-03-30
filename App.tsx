@@ -327,6 +327,41 @@ const App: React.FC = () => {
     }
   };
 
+  const handleRegenerate = useCallback(async () => {
+    if (isLoading || outfitHistory.length === 0 || currentOutfitIndex === 0) return;
+
+    const currentLayer = outfitHistory[currentOutfitIndex];
+    if (!currentLayer.garment) return;
+
+    setError(null);
+    setIsLoading(true);
+    setLoadingMessage('Regenerating...');
+
+    try {
+      const poseInstruction = getPoseInstructionByIndex(currentPoseIndex);
+      
+      // Get the base image for regeneration
+      const baseImageForRegenerate = currentLayer.poseSourceImageUrl ?? displayImageUrl;
+      if (!baseImageForRegenerate) return;
+      
+      // Regenerate the pose/image
+      const newImageUrl = await generatePoseVariation(baseImageForRegenerate, poseInstruction);
+      
+      // Update the outfit history with the new image
+      setOutfitHistory(prevHistory => {
+        const newHistory = [...prevHistory];
+        const updatedLayer = newHistory[currentOutfitIndex];
+        updatedLayer.poseImages[poseInstruction] = newImageUrl;
+        return newHistory;
+      });
+    } catch (err) {
+      setError(getFriendlyErrorMessage(err, 'Failed to regenerate image'));
+    } finally {
+      setIsLoading(false);
+      setLoadingMessage('');
+    }
+  }, [isLoading, outfitHistory, currentOutfitIndex, currentPoseIndex, displayImageUrl]);
+
   const handlePinWardrobeItem = useCallback(async (item: WardrobeItem) => {
     if (item.source !== 'user' || item.isPinned) {
       return;
@@ -502,6 +537,7 @@ const App: React.FC = () => {
                   canRedo={canRedo}
                   onUndo={handleUndo}
                   onRedo={handleRedo}
+                  onRegenerate={handleRegenerate}
                 />
 
                 {modelImageUrl && !isMobileDrawerOpen && (
