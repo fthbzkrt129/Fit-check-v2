@@ -1,30 +1,35 @@
 import React from 'react';
-import type { GarmentCategory, TopLengthOption, DressLengthOption } from '../types';
-import { CATEGORY_LABELS, TOP_LENGTH_LABELS, DRESS_LENGTH_LABELS } from '../lib/outfitFlow';
+import type { GarmentCategory, TopLengthOption, DressLengthOption, OuterwearLengthOption } from '../types';
+import { CATEGORY_LABELS, TOP_LENGTH_LABELS, DRESS_LENGTH_LABELS, OUTERWEAR_LENGTH_LABELS } from '../lib/outfitFlow';
 
 interface CategoryStepPanelProps {
   activeCategory: GarmentCategory;
   completedCategories: GarmentCategory[];
   selectedTopLength: TopLengthOption | null;
   selectedDressLength: DressLengthOption | null;
+  selectedOuterwearLength: OuterwearLengthOption | null;
   onSelectCategory: (category: GarmentCategory) => void;
   onSelectTopLength: (length: TopLengthOption) => void;
   onSelectDressLength: (length: DressLengthOption) => void;
+  onSelectOuterwearLength: (length: OuterwearLengthOption) => void;
   isLoading: boolean;
 }
 
-const categoryOrder: GarmentCategory[] = ['top', 'dress', 'bottom', 'footwear', 'accessory'];
+const categoryOrder: GarmentCategory[] = ['top', 'outerwear', 'dress', 'bottom', 'footwear', 'accessory'];
 const topLengths: TopLengthOption[] = ['crop', 'waist', 'hip', 'tunic'];
 const dressLengths: DressLengthOption[] = ['knee', 'midi', 'maxi', 'floor'];
+const outerwearLengths: OuterwearLengthOption[] = ['short', 'medium', 'long'];
 
 const CategoryStepPanel: React.FC<CategoryStepPanelProps> = ({
   activeCategory,
   completedCategories,
   selectedTopLength,
   selectedDressLength,
+  selectedOuterwearLength,
   onSelectCategory,
   onSelectTopLength,
   onSelectDressLength,
+  onSelectOuterwearLength,
   isLoading,
 }) => {
   return (
@@ -99,6 +104,29 @@ const CategoryStepPanel: React.FC<CategoryStepPanelProps> = ({
                 } ${isLoading ? 'cursor-not-allowed opacity-50' : ''}`}
               >
                 {DRESS_LENGTH_LABELS[length]}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {activeCategory === 'outerwear' && (
+        <div>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">Dış Giyim Boyu</p>
+          <div className="grid grid-cols-2 gap-2">
+            {outerwearLengths.map((length) => (
+              <button
+                key={length}
+                type="button"
+                onClick={() => onSelectOuterwearLength(length)}
+                disabled={isLoading}
+                className={`rounded-lg border px-3 py-2 text-sm font-medium transition-all ${
+                  selectedOuterwearLength === length
+                    ? 'border-gray-900 bg-gray-900 text-white'
+                    : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+                } ${isLoading ? 'cursor-not-allowed opacity-50' : ''}`}
+              >
+                {OUTERWEAR_LENGTH_LABELS[length]}
               </button>
             ))}
           </div>
