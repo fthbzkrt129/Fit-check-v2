@@ -4,7 +4,7 @@
 */
 
 import { GoogleGenAI, GenerateContentResponse, Modality } from "@google/genai";
-import type { GarmentCategory, LightingOption, SceneOption, SceneQualityMode, TopLengthOption } from '../types';
+import type { GarmentCategory, LightingOption, SceneOption, SceneQualityMode, TopLengthOption, DressLengthOption } from '../types';
 
 const fileToPart = async (file: File) => {
     const dataUrl = await new Promise<string>((resolve, reject) => {
@@ -143,7 +143,7 @@ export const generateModelImage = async (userImage: File): Promise<string> => {
     return handleApiResponse(response);
 };
 
-export const buildGarmentInstructions = (category: GarmentCategory, topLength?: TopLengthOption | null) => {
+export const buildGarmentInstructions = (category: GarmentCategory, topLength?: TopLengthOption | null, dressLength?: DressLengthOption | null) => {
     if (category === 'top') {
         const topLengthInstructions: Record<TopLengthOption, string> = {
             crop: 'The top must end above the waist in a clear cropped proportion.',
@@ -153,6 +153,17 @@ export const buildGarmentInstructions = (category: GarmentCategory, topLength?: 
         };
 
         return `Replace only the upper-body garment. Keep any visible lower-body garment intact. ${topLength ? topLengthInstructions[topLength] : 'The top must keep a realistic top-garment length.'}`;
+    }
+
+    if (category === 'dress') {
+        const dressLengthInstructions: Record<DressLengthOption, string> = {
+            knee: 'The dress must end at knee length.',
+            midi: 'The dress must be midi length, typically ending mid-calf.',
+            maxi: 'The dress must be maxi length, extending to the ankles.',
+            floor: 'The dress must be floor-length, extending to or touching the floor.',
+        };
+
+        return `Replace the entire outfit with a full-body dress. The dress must cover the torso and legs completely. ${dressLength ? dressLengthInstructions[dressLength] : 'The dress must be a realistic full-length dress.'}`;
     }
 
     if (category === 'bottom') {
@@ -171,6 +182,7 @@ export const generateVirtualTryOnImage = async (
     garmentImage: File,
     category: GarmentCategory = 'top',
     topLength?: TopLengthOption | null,
+    dressLength?: DressLengthOption | null,
 ): Promise<string> => {
     const modelImagePart = dataUrlToPart(modelImageUrl);
 
@@ -184,7 +196,7 @@ export const generateVirtualTryOnImage = async (
 
     const prompt = `You are an expert virtual try-on AI. You will be given a 'model image' and a 'garment image'. Your task is to create a new photorealistic image where the person from the 'model image' is wearing the clothing from the 'garment image'.
 
-Category-specific instruction: ${buildGarmentInstructions(category, topLength)}
+Category-specific instruction: ${buildGarmentInstructions(category, topLength, dressLength)}
 
 **Crucial Rules:**
 1.  Change only the area relevant to the garment category.
