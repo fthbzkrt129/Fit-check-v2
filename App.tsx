@@ -13,7 +13,7 @@ import CategoryStepPanel from './components/CategoryStepPanel';
 import ScenePanel from './components/ScenePanel';
 import SceneVariationList from './components/SceneVariationList';
 import { generateSceneVariation, generateVirtualTryOnImage, generatePoseVariation } from './services/geminiService';
-import { GarmentCategory, LightingOption, OutfitLayer, SceneOption, SceneQualityMode, SceneVariation, TopLengthOption, WardrobeItem } from './types';
+import { GarmentCategory, DressLengthOption, LightingOption, OutfitLayer, SceneOption, SceneQualityMode, SceneVariation, TopLengthOption, WardrobeItem } from './types';
 import { ChevronDownIcon, ChevronUpIcon, ChevronLeftIcon, ChevronRightIcon } from './components/icons';
 import { defaultWardrobe } from './wardrobe';
 import Footer from './components/Footer';
@@ -76,6 +76,7 @@ const App: React.FC = () => {
   });
   const [activeCategory, setActiveCategory] = useState<GarmentCategory>(initialSession?.activeCategory ?? 'top');
   const [selectedTopLength, setSelectedTopLength] = useState<TopLengthOption | null>(initialSession?.selectedTopLength ?? null);
+  const [selectedDressLength, setSelectedDressLength] = useState<DressLengthOption | null>(null);
   const [selectedScene, setSelectedScene] = useState<SceneOption | null>(null);
   const [selectedLighting, setSelectedLighting] = useState<LightingOption | null>(null);
   const [sceneQualityMode, setSceneQualityMode] = useState<SceneQualityMode>('fast');
@@ -104,6 +105,7 @@ const App: React.FC = () => {
         garmentName: layer.garment?.name ?? null,
         category: layer.category,
         topLength: layer.topLength ?? null,
+        dressLength: layer.dressLength ?? null,
       }));
       const data: SessionData = {
         currentOutfitIndex,
@@ -123,7 +125,7 @@ const App: React.FC = () => {
         clearTimeout(sessionSaveTimerRef.current);
       }
     };
-  }, [outfitHistory, currentOutfitIndex, currentPoseIndex, sceneVariations, activeCategory, selectedTopLength, wardrobe, modelImageUrl]);
+  }, [outfitHistory, currentOutfitIndex, currentPoseIndex, sceneVariations, activeCategory, selectedTopLength, selectedDressLength, wardrobe, modelImageUrl]);
 
   const activeOutfitLayers = useMemo(() => 
     outfitHistory.slice(0, currentOutfitIndex + 1), 
@@ -221,6 +223,10 @@ const App: React.FC = () => {
       setError('Üst giyim için önce ürün boyu seçin.');
       return;
     }
+    if (activeCategory === 'dress' && !selectedDressLength) {
+      setError('Elbise için önce elbise boyu seçin.');
+      return;
+    }
 
     // Caching: Check if we are re-applying a previously generated layer
     const nextLayer = outfitHistory[currentOutfitIndex + 1];
@@ -236,7 +242,7 @@ const App: React.FC = () => {
     setLoadingMessage(`Adding ${garmentInfo.name}...`);
 
     try {
-      const newImageUrl = await generateVirtualTryOnImage(displayImageUrl, garmentFile, activeCategory, selectedTopLength);
+      const newImageUrl = await generateVirtualTryOnImage(displayImageUrl, garmentFile, activeCategory, selectedTopLength, selectedDressLength);
       const currentPoseInstruction = getPoseInstructionByIndex(currentPoseIndex);
 
       const newLayer: OutfitLayer = {
@@ -244,6 +250,7 @@ const App: React.FC = () => {
         poseImages: { [currentPoseInstruction]: newImageUrl },
         category: activeCategory,
         topLength: activeCategory === 'top' ? selectedTopLength : null,
+        dressLength: activeCategory === 'dress' ? selectedDressLength : null,
       };
 
       setOutfitHistory(prevHistory => {
@@ -256,6 +263,9 @@ const App: React.FC = () => {
       setActiveCategory(getNextCategory(activeCategory));
       if (activeCategory === 'top') {
         setSelectedTopLength(null);
+      }
+      if (activeCategory === 'dress') {
+        setSelectedDressLength(null);
       }
 
       // Add to personal wardrobe if it's not already there
@@ -271,7 +281,7 @@ const App: React.FC = () => {
       setIsLoading(false);
       setLoadingMessage('');
     }
-  }, [displayImageUrl, isLoading, currentPoseIndex, outfitHistory, currentOutfitIndex, activeCategory, selectedTopLength]);
+  }, [displayImageUrl, isLoading, currentPoseIndex, outfitHistory, currentOutfitIndex, activeCategory, selectedTopLength, selectedDressLength]);
 
   const canUndo = currentOutfitIndex > 0;
   const canRedo = currentOutfitIndex < outfitHistory.length - 1;
@@ -539,9 +549,14 @@ const App: React.FC = () => {
                       activeCategory={activeCategory}
                       completedCategories={completedCategories}
                       selectedTopLength={selectedTopLength}
+                      selectedDressLength={selectedDressLength}
                       onSelectCategory={handleCategorySelect}
                       onSelectTopLength={(length) => {
                         setSelectedTopLength(length);
+                        setError(null);
+                      }}
+                      onSelectDressLength={(length) => {
+                        setSelectedDressLength(length);
                         setError(null);
                       }}
                       isLoading={isLoading}
