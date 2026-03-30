@@ -3,9 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
 */
 
-export type GarmentCategory = 'top' | 'bottom' | 'footwear' | 'accessory';
+export type GarmentCategory = 'top' | 'dress' | 'bottom' | 'footwear' | 'accessory';
 
 export type TopLengthOption = 'crop' | 'waist' | 'hip' | 'tunic';
+
+export type DressLengthOption = 'knee' | 'midi' | 'maxi' | 'floor';
 
 export interface WardrobeItem {
   id: string;
@@ -23,6 +25,7 @@ export interface OutfitLayer {
   poseImages: Record<string, string>; // Maps pose instruction to image URL
   category: GarmentCategory | 'base';
   topLength?: TopLengthOption | null;
+  dressLength?: DressLengthOption | null;
 }
 
 export type SceneOption = 'studio' | 'cafe' | 'street' | 'luxury room';
