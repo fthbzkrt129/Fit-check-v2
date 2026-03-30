@@ -26,6 +26,8 @@ import { POSE_OPTIONS } from './lib/poseOptions';
 import { addPinnedWardrobeItem, getPinnedWardrobeItems } from './lib/pinnedWardrobe';
 import { saveSession, loadSession, clearSession } from './lib/sessionStorage';
 import type { SessionData } from './lib/sessionStorage';
+import { saveSessionState, restoreSessionState, clearSessionData } from './src/lib/sessionPersistence';
+import type { SessionState } from './src/lib/sessionPersistence';
 import Spinner from './components/Spinner';
 
 const POSE_INSTRUCTIONS = POSE_OPTIONS.map((pose) => pose.instruction);
@@ -86,6 +88,50 @@ const App: React.FC = () => {
   const [customScenePrompt, setCustomScenePrompt] = useState<string | null>(null);
   const sessionSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMobile = useMediaQuery('(max-width: 767px)');
+
+  // Restore session state on mount (SESS-01, SESS-02, SESS-03)
+  useEffect(() => {
+    const restoredSession = restoreSessionState();
+    if (restoredSession) {
+      if (restoredSession.modelImageUrl) {
+        setModelImageUrl(restoredSession.modelImageUrl);
+      }
+      if (restoredSession.outfitHistory && restoredSession.outfitHistory.length > 0) {
+        setOutfitHistory(restoredSession.outfitHistory);
+      }
+      setCurrentOutfitIndex(restoredSession.currentOutfitIndex);
+      setCurrentPoseIndex(restoredSession.currentPoseIndex);
+      if (restoredSession.sceneVariations && restoredSession.sceneVariations.length > 0) {
+        setSceneVariations(restoredSession.sceneVariations);
+      }
+      if (restoredSession.pinnedWardrobe && restoredSession.pinnedWardrobe.length > 0) {
+        setWardrobe(prev => {
+          const userItems = restoredSession.pinnedWardrobe || [];
+          return [...defaultWardrobe, ...getPinnedWardrobeItems(), ...userItems.filter(i => i.source === 'user')];
+        });
+      }
+      setActiveCategory(restoredSession.activeCategory);
+      setSelectedTopLength(restoredSession.selectedTopLength);
+    }
+  }, []);
+
+  // Persist session state on every state change (SESS-01, SESS-02, SESS-03)
+  useEffect(() => {
+    if (modelImageUrl && outfitHistory.length > 0) {
+      const pinnedItems = wardrobe.filter((item) => item.isPinned === true);
+      const sessionState: SessionState = {
+        modelImageUrl,
+        outfitHistory,
+        currentOutfitIndex,
+        currentPoseIndex,
+        sceneVariations,
+        pinnedWardrobe: pinnedItems,
+        activeCategory,
+        selectedTopLength,
+      };
+      saveSessionState(sessionState);
+    }
+  }, [modelImageUrl, outfitHistory, currentOutfitIndex, currentPoseIndex, sceneVariations, wardrobe, activeCategory, selectedTopLength]);
 
   useEffect(() => {
     if (sessionSaveTimerRef.current) {
@@ -202,6 +248,7 @@ const App: React.FC = () => {
 
   const handleStartOver = () => {
     clearSession();
+    clearSessionData(); // Clear new session persistence (SESS-04)
     setModelImageUrl(null);
     setOutfitHistory([]);
     setCurrentOutfitIndex(0);
