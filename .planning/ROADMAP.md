@@ -36,6 +36,11 @@
 3. Poz indeksi ve sahne varyasyonları korunur
 4. "Baştan Başla" tüm kayıtlı oturum verisini temizler
 
+**Plans:** 1 plan
+
+**Plans:**
+- [ ] 02-oturum-kalıcılığı-01-PLAN.md — Implement session persistence with localStorage
+
 ---
 
 ## Phase 3: Undo/Redo
