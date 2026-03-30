@@ -80,8 +80,11 @@ export const buildScenePrompt = (
     scene: SceneOption,
     lighting: LightingOption,
     mode: SceneQualityMode,
+    customPrompt?: string,
 ) => {
-    const sceneDirection = sceneDescriptions[scene];
+    const sceneDirection = customPrompt 
+      ? `a ${customPrompt} environment`
+      : sceneDescriptions[scene];
     const lightingDirection = lightingDescriptions[lighting];
 
     if (mode === 'pro') {
@@ -218,9 +221,10 @@ export const generateSceneVariation = async (
     scene: SceneOption,
     lighting: LightingOption,
     mode: SceneQualityMode = 'fast',
+    customPrompt?: string,
 ): Promise<string> => {
     const baseImagePart = dataUrlToPart(baseImageUrl);
-    const prompt = buildScenePrompt(scene, lighting, mode);
+    const prompt = buildScenePrompt(scene, lighting, mode, customPrompt);
     const response = await ai.models.generateContent({
         model: getSceneModelName(mode),
         contents: { parts: [baseImagePart, { text: prompt }] },

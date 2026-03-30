@@ -39,4 +39,5 @@ export interface SceneVariation {
   sourcePose: string;
   createdAt: number;
   qualityMode?: SceneQualityMode;
+  customPrompt?: string;
 }

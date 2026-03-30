@@ -81,6 +81,7 @@ const App: React.FC = () => {
   const [sceneQualityMode, setSceneQualityMode] = useState<SceneQualityMode>('fast');
   const [sceneVariations, setSceneVariations] = useState<SceneVariation[]>(initialSession?.sceneVariations ?? []);
   const [selectedSceneVariationId, setSelectedSceneVariationId] = useState<string | null>(null);
+  const [customScenePrompt, setCustomScenePrompt] = useState<string | null>(null);
   const sessionSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMobile = useMediaQuery('(max-width: 767px)');
 
@@ -385,26 +386,42 @@ const App: React.FC = () => {
     setActiveCategory(nextCategory);
   }, []);
 
+  const handleSelectCustomScene = useCallback((customPrompt: string) => {
+    setError(null);
+    setSelectedScene('studio'); // Set scene to a default value
+    setCustomScenePrompt(customPrompt);
+  }, []);
+
   const handleGenerateScene = useCallback(async () => {
     const currentLayer = outfitHistory[currentOutfitIndex];
     const sceneBaseImageUrl = getSceneGenerationBaseImage(currentLayer, getPoseInstructionByIndex(currentPoseIndex));
-    if (!sceneBaseImageUrl || !selectedScene || !selectedLighting || isLoading) return;
+    if (!sceneBaseImageUrl || !selectedLighting || isLoading) return;
+
+    // Either use custom scene or selected preset scene
+    if (!customScenePrompt && !selectedScene) return;
 
     setError(null);
     setIsLoading(true);
     setLoadingMessage('Generating scene variation...');
 
     try {
-      const imageUrl = await generateSceneVariation(sceneBaseImageUrl, selectedScene, selectedLighting, sceneQualityMode);
+      const imageUrl = await generateSceneVariation(
+        sceneBaseImageUrl, 
+        selectedScene || 'studio', 
+        selectedLighting, 
+        sceneQualityMode,
+        customScenePrompt ?? undefined
+      );
       const newVariation: SceneVariation = {
         id: `scene-${Date.now()}`,
         outfitIndex: currentOutfitIndex,
-        scene: selectedScene,
+        scene: selectedScene || 'studio',
         lighting: selectedLighting,
         imageUrl,
         sourcePose: getPoseInstructionByIndex(currentPoseIndex),
         createdAt: Date.now(),
         qualityMode: sceneQualityMode,
+        customPrompt: customScenePrompt ?? undefined,
       };
 
       setSceneVariations((previous) => addSceneVariationWithLimit(previous, newVariation, 3));
@@ -415,7 +432,7 @@ const App: React.FC = () => {
       setIsLoading(false);
       setLoadingMessage('');
     }
-  }, [outfitHistory, currentOutfitIndex, currentPoseIndex, selectedScene, selectedLighting, isLoading, sceneQualityMode]);
+  }, [outfitHistory, currentOutfitIndex, currentPoseIndex, selectedScene, selectedLighting, customScenePrompt, isLoading, sceneQualityMode]);
 
   const viewVariants = {
     initial: { opacity: 0, y: 15 },
@@ -536,9 +553,11 @@ const App: React.FC = () => {
                       onSelectScene={setSelectedScene}
                       onSelectLighting={setSelectedLighting}
                       onChangeQualityMode={setSceneQualityMode}
+                      onSelectCustomScene={handleSelectCustomScene}
                       onGenerate={handleGenerateScene}
                       isLoading={isLoading}
                       disabled={!displayImageUrl}
+                      hasCustomScene={customScenePrompt !== null}
                     />
                     <SceneVariationList
                       variations={currentSceneVariations}
