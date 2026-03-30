@@ -1,25 +1,30 @@
 import React from 'react';
-import type { GarmentCategory, TopLengthOption } from '../types';
-import { CATEGORY_LABELS, TOP_LENGTH_LABELS } from '../lib/outfitFlow';
+import type { GarmentCategory, TopLengthOption, DressLengthOption } from '../types';
+import { CATEGORY_LABELS, TOP_LENGTH_LABELS, DRESS_LENGTH_LABELS } from '../lib/outfitFlow';
 
 interface CategoryStepPanelProps {
   activeCategory: GarmentCategory;
   completedCategories: GarmentCategory[];
   selectedTopLength: TopLengthOption | null;
+  selectedDressLength: DressLengthOption | null;
   onSelectCategory: (category: GarmentCategory) => void;
   onSelectTopLength: (length: TopLengthOption) => void;
+  onSelectDressLength: (length: DressLengthOption) => void;
   isLoading: boolean;
 }
 
-const categoryOrder: GarmentCategory[] = ['top', 'bottom', 'footwear', 'accessory'];
+const categoryOrder: GarmentCategory[] = ['top', 'dress', 'bottom', 'footwear', 'accessory'];
 const topLengths: TopLengthOption[] = ['crop', 'waist', 'hip', 'tunic'];
+const dressLengths: DressLengthOption[] = ['knee', 'midi', 'maxi', 'floor'];
 
 const CategoryStepPanel: React.FC<CategoryStepPanelProps> = ({
   activeCategory,
   completedCategories,
   selectedTopLength,
+  selectedDressLength,
   onSelectCategory,
   onSelectTopLength,
+  onSelectDressLength,
   isLoading,
 }) => {
   return (
@@ -71,6 +76,29 @@ const CategoryStepPanel: React.FC<CategoryStepPanelProps> = ({
                 } ${isLoading ? 'cursor-not-allowed opacity-50' : ''}`}
               >
                 {TOP_LENGTH_LABELS[length]}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {activeCategory === 'dress' && (
+        <div>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">Elbise Boyu</p>
+          <div className="grid grid-cols-2 gap-2">
+            {dressLengths.map((length) => (
+              <button
+                key={length}
+                type="button"
+                onClick={() => onSelectDressLength(length)}
+                disabled={isLoading}
+                className={`rounded-lg border px-3 py-2 text-sm font-medium transition-all ${
+                  selectedDressLength === length
+                    ? 'border-gray-900 bg-gray-900 text-white'
+                    : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+                } ${isLoading ? 'cursor-not-allowed opacity-50' : ''}`}
+              >
+                {DRESS_LENGTH_LABELS[length]}
               </button>
             ))}
           </div>
