@@ -4,7 +4,7 @@
 */
 
 import { GoogleGenAI, GenerateContentResponse, Modality } from "@google/genai";
-import type { GarmentCategory, LightingOption, SceneOption, SceneQualityMode, TopLengthOption, DressLengthOption } from '../types';
+import type { GarmentCategory, LightingOption, SceneOption, SceneQualityMode, TopLengthOption, DressLengthOption, OuterwearLengthOption } from '../types';
 
 const fileToPart = async (file: File) => {
     const dataUrl = await new Promise<string>((resolve, reject) => {
@@ -143,7 +143,7 @@ export const generateModelImage = async (userImage: File): Promise<string> => {
     return handleApiResponse(response);
 };
 
-export const buildGarmentInstructions = (category: GarmentCategory, topLength?: TopLengthOption | null, dressLength?: DressLengthOption | null) => {
+export const buildGarmentInstructions = (category: GarmentCategory, topLength?: TopLengthOption | null, dressLength?: DressLengthOption | null, outerwearLength?: OuterwearLengthOption | null) => {
     if (category === 'top') {
         const topLengthInstructions: Record<TopLengthOption, string> = {
             crop: 'The top must end above the waist in a clear cropped proportion.',
@@ -166,6 +166,16 @@ export const buildGarmentInstructions = (category: GarmentCategory, topLength?: 
         return `Replace the entire outfit with a full-body dress. The dress must cover the torso and legs completely. ${dressLength ? dressLengthInstructions[dressLength] : 'The dress must be a realistic full-length dress.'}`;
     }
 
+    if (category === 'outerwear') {
+        const outerwearLengthInstructions: Record<OuterwearLengthOption, string> = {
+            short: 'The outerwear must be short jacket length, ending above the hip.',
+            medium: 'The outerwear must be medium/blazer length, ending at the hip.',
+            long: 'The outerwear must be long coat length, extending past the hip to mid-thigh or longer.',
+        };
+
+        return `Layer the outerwear naturally OVER the existing top. Keep the top fully visible. The outerwear must rest on the shoulders and drape naturally. ${outerwearLength ? outerwearLengthInstructions[outerwearLength] : 'The outerwear must have realistic jacket proportions.'}`;
+    }
+
     if (category === 'bottom') {
         return 'Replace only the lower-body garment. Keep the upper-body garment intact and visible. Preserve the full-body framing from head to toe. Do not crop the model. Do not change the aspect ratio or camera distance.';
     }
@@ -183,6 +193,7 @@ export const generateVirtualTryOnImage = async (
     category: GarmentCategory = 'top',
     topLength?: TopLengthOption | null,
     dressLength?: DressLengthOption | null,
+    outerwearLength?: OuterwearLengthOption | null,
 ): Promise<string> => {
     const modelImagePart = dataUrlToPart(modelImageUrl);
 
@@ -196,7 +207,7 @@ export const generateVirtualTryOnImage = async (
 
     const prompt = `You are an expert virtual try-on AI. You will be given a 'model image' and a 'garment image'. Your task is to create a new photorealistic image where the person from the 'model image' is wearing the clothing from the 'garment image'.
 
-Category-specific instruction: ${buildGarmentInstructions(category, topLength, dressLength)}
+Category-specific instruction: ${buildGarmentInstructions(category, topLength, dressLength, outerwearLength)}
 
 **Crucial Rules:**
 1.  Change only the area relevant to the garment category.
