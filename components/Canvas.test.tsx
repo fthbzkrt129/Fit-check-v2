@@ -16,6 +16,10 @@ describe('Canvas', () => {
         poseInstructions={['Front', 'Side']}
         currentPoseIndex={0}
         availablePoseKeys={['Front']}
+        canUndo={false}
+        canRedo={false}
+        onUndo={vi.fn()}
+        onRedo={vi.fn()}
       />
     );
 
@@ -41,6 +45,10 @@ describe('Canvas', () => {
         poseInstructions={['Front', 'Side']}
         currentPoseIndex={0}
         availablePoseKeys={['Front']}
+        canUndo={false}
+        canRedo={false}
+        onUndo={vi.fn()}
+        onRedo={vi.fn()}
       />
     );
 

@@ -87,36 +87,44 @@ export const buildScenePrompt = (
     if (mode === 'pro') {
         return `You are an expert luxury fashion campaign photographer AI. You will receive an existing fashion try-on image.
 
-Your job is to preserve the same model identity, same outfit and fit, same garment boundaries and proportions, and the same overall framing and composition while transforming only the environment and lighting in a more premium, believable way.
+Your job is to seamlessly blend the person and their outfit into a new environment. The result must look like a single photograph taken on location — NOT a composite or cutout.
 
 Scene direction: ${sceneDirection}.
 Lighting direction: ${lightingDirection}.
 
-Rules:
-1. Preserve the same model identity, face, hair, body proportions, and pose.
-2. Preserve the same outfit and fit, including garment edges, lengths, colors, materials, and visible accessories.
+Critical blending rules:
+1. Preserve the same model identity, face, hair, body proportions, and pose exactly.
+2. Preserve the same outfit and fit — garment edges, lengths, colors, materials, and visible accessories must remain identical.
 3. Preserve the same overall framing and composition. Do not crop, zoom, or change camera distance.
-4. Do not redesign or restyle the outfit.
-5. Replace only the environment and lighting with a more premium, realistic editorial result.
-6. Keep the result photorealistic, refined, and commercially usable.
-7. Return ONLY the final image.`;
+4. Add realistic contact shadows beneath the model's feet/shoes that match the new floor surface and lighting angle.
+5. Apply subtle ambient light color from the new environment onto the model's skin, hair, and clothing — warm scenes should warm the subject, cool scenes should cool it. This is the single most important step to avoid the "pasted on" look.
+6. Add soft environmental reflections on shiny fabric surfaces (leather, silk, metallic accessories) that correspond to the new scene colors.
+7. Apply a gentle rim light or backlight from the environment to separate the subject from the background naturally.
+8. Soften the subject's silhouette edges with subtle environmental light bleeding — no hard cutout edges.
+9. Match the overall color temperature and contrast grading of the entire image to the new environment.
+10. Do not redesign or restyle the outfit.
+11. Keep the result photorealistic, refined, and commercially usable.
+12. Return ONLY the final image.`;
     }
 
-    return `You are an expert fashion campaign photographer AI. You will receive an existing fashion try-on image.
+    return `You are an expert fashion photographer AI. You will receive an existing fashion try-on image.
 
-Your job is to keep the same person, same outfit, same fit, same garment colors, same styling, and same overall composition focus while transforming only the environment and lighting.
+Your job is to naturally place the person into a new environment so it looks like a real photograph taken on location — not a composite.
 
 Scene direction: ${sceneDirection}.
 Lighting direction: ${lightingDirection}.
 
-Rules:
-1. Preserve the person's identity, face, hair, body proportions, and pose.
+Critical blending rules:
+1. Preserve the person's identity, face, hair, body proportions, and pose exactly.
 2. Preserve the clothing design, silhouette, fabric appearance, colors, and all visible accessories.
 3. Do not redesign or replace the outfit.
-4. Change the background and environmental styling to match the requested scene.
-5. Apply the requested lighting consistently across the subject and environment.
-6. Keep the result photorealistic, premium, and suitable for a fashion e-commerce/editorial experience.
-7. Return ONLY the final image.`;
+4. Add a realistic floor shadow beneath the model that matches the ground surface and lighting direction.
+5. Tint the model's skin and clothing with the ambient color of the new environment so the subject belongs in the scene — this prevents the "pasted on" effect.
+6. Add subtle environmental light reflections on any shiny or glossy surfaces of the clothing.
+7. Soften the edges where the model meets the background with natural light wrap — avoid hard cutout edges.
+8. Match the overall color tone and brightness of the whole image to the new scene.
+9. Keep the result photorealistic and natural.
+10. Return ONLY the final image.`;
 };
 
 export const generateModelImage = async (userImage: File): Promise<string> => {
@@ -162,7 +170,15 @@ export const generateVirtualTryOnImage = async (
     topLength?: TopLengthOption | null,
 ): Promise<string> => {
     const modelImagePart = dataUrlToPart(modelImageUrl);
-    const garmentImagePart = await fileToPart(garmentImage);
+
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(garmentImage);
+    });
+    const garmentImagePart = dataUrlToPart(dataUrl);
+
     const prompt = `You are an expert virtual try-on AI. You will be given a 'model image' and a 'garment image'. Your task is to create a new photorealistic image where the person from the 'model image' is wearing the clothing from the 'garment image'.
 
 Category-specific instruction: ${buildGarmentInstructions(category, topLength)}
@@ -172,7 +188,8 @@ Category-specific instruction: ${buildGarmentInstructions(category, topLength)}
 2.  Preserve the person's face, hair, body shape, and pose from the 'model image'.
 3.  Preserve the entire background from the 'model image'.
 4.  Fit the garment naturally with realistic folds, shadows, and lighting consistent with the original scene.
-5.  Return ONLY the final edited image.`;
+5.  Maintain the aspect ratio of the base image - do not stretch or squash the garment or background.
+6.  Return ONLY the final edited image.`;
     const response = await ai.models.generateContent({
         model,
         contents: { parts: [modelImagePart, garmentImagePart, { text: prompt }] },

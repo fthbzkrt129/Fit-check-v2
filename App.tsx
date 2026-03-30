@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
 */
 
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import StartScreen from './components/StartScreen';
 import Canvas from './components/Canvas';
@@ -24,6 +24,8 @@ import { downloadImage } from './lib/downloadImage';
 import { blobUrlToDataUrl } from './lib/imagePersistence';
 import { POSE_OPTIONS } from './lib/poseOptions';
 import { addPinnedWardrobeItem, getPinnedWardrobeItems } from './lib/pinnedWardrobe';
+import { saveSession, loadSession, clearSession } from './lib/sessionStorage';
+import type { SessionData } from './lib/sessionStorage';
 import Spinner from './components/Spinner';
 
 const POSE_INSTRUCTIONS = POSE_OPTIONS.map((pose) => pose.instruction);
@@ -57,24 +59,70 @@ const useMediaQuery = (query: string): boolean => {
 };
 
 
+const initialSession = loadSession();
+
 const App: React.FC = () => {
   const [modelImageUrl, setModelImageUrl] = useState<string | null>(null);
   const [outfitHistory, setOutfitHistory] = useState<OutfitLayer[]>([]);
-  const [currentOutfitIndex, setCurrentOutfitIndex] = useState(0);
+  const [currentOutfitIndex, setCurrentOutfitIndex] = useState(initialSession?.currentOutfitIndex ?? 0);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [currentPoseIndex, setCurrentPoseIndex] = useState(0);
+  const [currentPoseIndex, setCurrentPoseIndex] = useState(initialSession?.currentPoseIndex ?? 0);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
-  const [wardrobe, setWardrobe] = useState<WardrobeItem[]>(() => [...defaultWardrobe, ...getPinnedWardrobeItems()]);
-  const [activeCategory, setActiveCategory] = useState<GarmentCategory>('top');
-  const [selectedTopLength, setSelectedTopLength] = useState<TopLengthOption | null>(null);
+  const [wardrobe, setWardrobe] = useState<WardrobeItem[]>(() => {
+    const userItems = initialSession?.wardrobeUserItems ?? [];
+    return [...defaultWardrobe, ...getPinnedWardrobeItems(), ...userItems.filter(i => i.source === 'user')];
+  });
+  const [activeCategory, setActiveCategory] = useState<GarmentCategory>(initialSession?.activeCategory ?? 'top');
+  const [selectedTopLength, setSelectedTopLength] = useState<TopLengthOption | null>(initialSession?.selectedTopLength ?? null);
   const [selectedScene, setSelectedScene] = useState<SceneOption | null>(null);
   const [selectedLighting, setSelectedLighting] = useState<LightingOption | null>(null);
   const [sceneQualityMode, setSceneQualityMode] = useState<SceneQualityMode>('fast');
-  const [sceneVariations, setSceneVariations] = useState<SceneVariation[]>([]);
+  const [sceneVariations, setSceneVariations] = useState<SceneVariation[]>(initialSession?.sceneVariations ?? []);
   const [selectedSceneVariationId, setSelectedSceneVariationId] = useState<string | null>(null);
+  const sessionSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMobile = useMediaQuery('(max-width: 767px)');
+
+  useEffect(() => {
+    if (sessionSaveTimerRef.current) {
+      clearTimeout(sessionSaveTimerRef.current);
+    }
+
+    sessionSaveTimerRef.current = setTimeout(() => {
+      const userItems = wardrobe.filter((item) => item.source === 'user').map(item => ({
+        ...item,
+        url: item.url.startsWith('data:image/') ? '[image-data]' : item.url,
+      }));
+      const smallSceneVariations = sceneVariations.map(v => ({
+        ...v,
+        imageUrl: '',
+      }));
+      const outfitLayerMeta = outfitHistory.map(layer => ({
+        garmentId: layer.garment?.id ?? null,
+        garmentName: layer.garment?.name ?? null,
+        category: layer.category,
+        topLength: layer.topLength ?? null,
+      }));
+      const data: SessionData = {
+        currentOutfitIndex,
+        currentPoseIndex,
+        sceneVariations: smallSceneVariations,
+        activeCategory,
+        selectedTopLength,
+        wardrobeUserItems: userItems,
+        outfitLayerMeta,
+        hasModel: !!modelImageUrl,
+      };
+      saveSession(data);
+    }, 500);
+
+    return () => {
+      if (sessionSaveTimerRef.current) {
+        clearTimeout(sessionSaveTimerRef.current);
+      }
+    };
+  }, [outfitHistory, currentOutfitIndex, currentPoseIndex, sceneVariations, activeCategory, selectedTopLength, wardrobe, modelImageUrl]);
 
   const activeOutfitLayers = useMemo(() => 
     outfitHistory.slice(0, currentOutfitIndex + 1), 
@@ -148,6 +196,7 @@ const App: React.FC = () => {
   };
 
   const handleStartOver = () => {
+    clearSession();
     setModelImageUrl(null);
     setOutfitHistory([]);
     setCurrentOutfitIndex(0);
@@ -223,18 +272,37 @@ const App: React.FC = () => {
     }
   }, [displayImageUrl, isLoading, currentPoseIndex, outfitHistory, currentOutfitIndex, activeCategory, selectedTopLength]);
 
-  const handleRemoveLastGarment = () => {
-    if (currentOutfitIndex > 0) {
-      const previousLayer = activeOutfitLayers[activeOutfitLayers.length - 1];
-      setCurrentOutfitIndex(prevIndex => prevIndex - 1);
-      setCurrentPoseIndex(0);
-      setSelectedSceneVariationId(null);
-      if (previousLayer?.category && previousLayer.category !== 'base') {
-        setActiveCategory(previousLayer.category);
-        if (previousLayer.category === 'top') {
-          setSelectedTopLength(previousLayer.topLength ?? null);
-        }
+  const canUndo = currentOutfitIndex > 0;
+  const canRedo = currentOutfitIndex < outfitHistory.length - 1;
+
+  const handleUndo = () => {
+    if (!canUndo) return;
+    const previousLayer = activeOutfitLayers[activeOutfitLayers.length - 1];
+    setCurrentOutfitIndex(prevIndex => prevIndex - 1);
+    setCurrentPoseIndex(0);
+    setSelectedSceneVariationId(null);
+    if (previousLayer?.category && previousLayer.category !== 'base') {
+      setActiveCategory(previousLayer.category);
+      if (previousLayer.category === 'top') {
+        setSelectedTopLength(previousLayer.topLength ?? null);
       }
+    }
+  };
+
+  const handleRedo = () => {
+    if (!canRedo) return;
+    const nextLayer = outfitHistory[currentOutfitIndex + 1];
+    setCurrentOutfitIndex(prev => prev + 1);
+    setCurrentPoseIndex(0);
+    setSelectedSceneVariationId(null);
+    if (nextLayer?.category && nextLayer.category !== 'base') {
+      setActiveCategory(nextLayer.category);
+      if (nextLayer.category === 'top') {
+        setSelectedTopLength(nextLayer.topLength ?? null);
+      }
+    } else {
+      const currentLayer = outfitHistory[currentOutfitIndex];
+      setActiveCategory(getNextCategory(currentLayer?.category === 'base' ? 'top' : currentLayer?.category ?? 'top'));
     }
   };
 
@@ -393,6 +461,10 @@ const App: React.FC = () => {
                   poseInstructions={POSE_LABELS}
                   currentPoseIndex={currentPoseIndex}
                   availablePoseKeys={availablePoseKeys}
+                  canUndo={canUndo}
+                  canRedo={canRedo}
+                  onUndo={handleUndo}
+                  onRedo={handleRedo}
                 />
 
                 {modelImageUrl && !isMobileDrawerOpen && (
@@ -444,7 +516,7 @@ const App: React.FC = () => {
                     )}
                     <OutfitStack
                       outfitHistory={activeOutfitLayers}
-                      onRemoveLastGarment={handleRemoveLastGarment}
+                      onRemoveLastGarment={handleUndo}
                     />
                     <CategoryStepPanel
                       activeCategory={activeCategory}

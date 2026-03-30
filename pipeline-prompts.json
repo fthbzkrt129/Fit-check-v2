@@ -1,0 +1,38 @@
+{
+  "workflow": {
+    "status": "completed",
+    "modules_executed": [
+      "scene-builder",
+      "camera-angle-designer",
+      "pose-variation-generator",
+      "final-prompt-composer"
+    ]
+  },
+  "input_summary": {
+    "description": "Analysis of a plus-size model wearing a bronze sequin top and brown wide-leg trousers."
+  },
+  "upstream_context": {
+    "product_priority": "high",
+    "key_features": ["metallic bronze sequins", "brown tailored wide-leg pants"]
+  },
+  "module_output": {
+    "merge_summary": "Successfully merged scene, camera, and pose directives. Conflict resolution applied: ensured arms do not obscure the sequin texture in studio shots, and adjusted camera angle in lifestyle shots to capture the trouser drape.",
+    "prompt_variations": [
+      {
+        "id": "prompt_variant_1",
+        "name": "Urban Night Lifestyle (Full Pipeline)",
+        "final_prompt": "A high-quality fashion photography shot of a beautiful plus-size model wearing a short-sleeve metallic bronze sequin top and brown tailored wide-leg trousers. She is standing outside a luxury cocktail bar at night with street lights creating beautiful bokeh in the background. Warm amber ambient lighting. The camera angle is a medium-full shot from a slightly low angle using a 50mm lens to emphasize the drape of the trousers. She is in a relaxed pose with one hand in her pocket, weight shifted to one leg. Photorealistic, premium, evening wear style."
+      },
+      {
+        "id": "prompt_variant_2",
+        "name": "Premium Editorial Studio (Full Pipeline)",
+        "final_prompt": "A premium editorial fashion photography shot of a beautiful plus-size model wearing a short-sleeve metallic bronze sequin top and brown tailored wide-leg trousers. Shot in a dark charcoal infinity curve studio. Dramatic spotlighting with high contrast to make the sequins sparkle. The camera angle is a medium close-up at eye level using an 85mm lens, focusing sharply on the sequin texture. She is standing in a confident posture, arms slightly away from the body to reveal the silhouette, chin slightly up. High-end, moody, photorealistic."
+      }
+    ]
+  },
+  "metadata": {
+    "schema_version": "1.0",
+    "module": "final-prompt-composer",
+    "downstream_ready": true
+  }
+}
