@@ -1,6 +1,6 @@
-import type { GarmentCategory, TopLengthOption, DressLengthOption } from '../types';
+import type { GarmentCategory, TopLengthOption, DressLengthOption, OuterwearLengthOption } from '../types';
 
-const CATEGORY_ORDER: GarmentCategory[] = ['top', 'dress', 'bottom', 'footwear', 'accessory'];
+const CATEGORY_ORDER: GarmentCategory[] = ['top', 'outerwear', 'dress', 'bottom', 'footwear', 'accessory'];
 
 export const getNextCategory = (category: GarmentCategory): GarmentCategory => {
   const currentIndex = CATEGORY_ORDER.indexOf(category);
@@ -17,6 +17,7 @@ export const isCategorySelectionAllowed = (
 
 export const CATEGORY_LABELS: Record<GarmentCategory, string> = {
   top: 'Üst Giyim',
+  outerwear: 'Dış Giyim',
   dress: 'Elbise',
   bottom: 'Alt Giyim',
   footwear: 'Ayakkabı',
@@ -35,4 +36,10 @@ export const DRESS_LENGTH_LABELS: Record<DressLengthOption, string> = {
   midi: 'Midi',
   maxi: 'Maxi',
   floor: 'Uzun (Floor)',
+};
+
+export const OUTERWEAR_LENGTH_LABELS: Record<OuterwearLengthOption, string> = {
+  short: 'Kısa (Ceket)',
+  medium: 'Orta (Blazer)',
+  long: 'Uzun (Mont)',
 };
