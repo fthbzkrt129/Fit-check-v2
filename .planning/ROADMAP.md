@@ -39,7 +39,7 @@
 **Plans:** 1 plan
 
 **Plans:**
-- [ ] 02-oturum-kalıcılığı-01-PLAN.md — Implement session persistence with localStorage
+- [x] 02-oturum-kalıcılığı-01-PLAN.md — Implement session persistence with localStorage ✅
 
 ---
 
@@ -54,6 +54,11 @@
 2. Geri alınan parçayı yineleyebilir
 3. Geri al/yinele butonları bağlam bazlı duruma göre görünür/gizli olur (geri alınacak bir şey yoksa buton pasif)
 
+**Plans:** 1 plan
+
+**Plans:**
+- [ ] 03-undo-redo-01-PLAN.md — Add Undo/Redo buttons with index-based navigation
+
 ---
 
 ## Kapsama
@@ -63,10 +68,10 @@
 | RATIO-01 | Phase 1 | Tamamlandı |
 | RATIO-02 | Phase 1 | Tamamlandı |
 | RATIO-03 | Phase 1 | Tamamlandı |
-| SESS-01 | Phase 2 | Beklemede |
-| SESS-02 | Phase 2 | Beklemede |
-| SESS-03 | Phase 2 | Beklemede |
-| SESS-04 | Phase 2 | Beklemede |
+| SESS-01 | Phase 2 | Tamamlandı |
+| SESS-02 | Phase 2 | Tamamlandı |
+| SESS-03 | Phase 2 | Tamamlandı |
+| SESS-04 | Phase 2 | Tamamlandı |
 | UNDO-01 | Phase 3 | Beklemede |
 | UNDO-02 | Phase 3 | Beklemede |
 | UNDO-03 | Phase 3 | Beklemede |
@@ -74,4 +79,4 @@
 **Coverage:** 10/10 gereksinim haritalandırıldı ✓
 
 ---
-*Yol haritası oluşturuldu: 2026-03-30*
+*Yol haritası güncellendi: 2026-03-30*
