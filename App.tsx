@@ -7,6 +7,7 @@ import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion';
 import StartScreen from './components/StartScreen';
 import Canvas from './components/Canvas';
+import UndoRedoBar from './components/UndoRedoBar';
 import WardrobePanel from './components/WardrobeModal';
 import OutfitStack from './components/OutfitStack';
 import CategoryStepPanel from './components/CategoryStepPanel';
@@ -568,7 +569,15 @@ const App: React.FC = () => {
             transition={{ duration: 0.5, ease: 'easeInOut' }}
           >
             <main className="flex-grow relative flex flex-col md:flex-row overflow-hidden">
-              <div className="w-full h-full flex-grow flex items-center justify-center bg-white pb-16 relative">
+              <div className="w-full h-full flex-grow flex flex-col items-center justify-center bg-white pb-16 relative">
+                <div className="absolute top-6 left-6 z-30">
+                  <UndoRedoBar
+                    canUndo={canUndo}
+                    canRedo={canRedo}
+                    onUndo={handleUndo}
+                    onRedo={handleRedo}
+                  />
+                </div>
                 <Canvas
                   displayImageUrl={displayImageUrl}
                   onStartOver={handleStartOver}
