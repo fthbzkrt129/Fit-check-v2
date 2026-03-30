@@ -3,11 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
 */
 
-export type GarmentCategory = 'top' | 'dress' | 'bottom' | 'footwear' | 'accessory';
+export type GarmentCategory = 'top' | 'outerwear' | 'dress' | 'bottom' | 'footwear' | 'accessory';
 
 export type TopLengthOption = 'crop' | 'waist' | 'hip' | 'tunic';
 
 export type DressLengthOption = 'knee' | 'midi' | 'maxi' | 'floor';
+
+export type OuterwearLengthOption = 'short' | 'medium' | 'long';
 
 export interface WardrobeItem {
   id: string;
@@ -26,6 +28,7 @@ export interface OutfitLayer {
   category: GarmentCategory | 'base';
   topLength?: TopLengthOption | null;
   dressLength?: DressLengthOption | null;
+  outerwearLength?: OuterwearLengthOption | null;
 }
 
 export type SceneOption = 'studio' | 'cafe' | 'street' | 'luxury room';
