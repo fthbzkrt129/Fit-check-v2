@@ -98,16 +98,16 @@ const WardrobePanel: React.FC<WardrobePanelProps> = ({ onGarmentSelect, onPinIte
     <div className="pt-6 border-t border-gray-400/50">
         <h2 className="text-xl font-serif tracking-wider text-gray-800 mb-1">Wardrobe</h2>
         <p className="text-sm text-gray-500 mb-3">Aktif adım: {categoryLabels[activeCategory]}</p>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-3">
             {visibleWardrobe.map((item) => {
             const isActive = activeGarmentIds.includes(item.id);
             const canPin = item.source === 'user' && !item.isPinned;
             return (
-                <div key={item.id} className="relative aspect-square">
+                <div key={item.id} className="relative aspect-square min-w-0">
                 <button
                 onClick={() => handleGarmentClick(item)}
                 disabled={isLoading || isActive}
-                className="relative h-full w-full border rounded-lg overflow-hidden transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-800 group disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="relative h-full w-full border rounded-lg overflow-hidden transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-800 group disabled:opacity-60 disabled:cursor-not-allowed"
                 aria-label={`Select ${item.name}`}
                 >
                 <img src={item.url} alt={item.name} className="w-full h-full object-cover" />
@@ -136,7 +136,7 @@ const WardrobePanel: React.FC<WardrobePanelProps> = ({ onGarmentSelect, onPinIte
                     type="button"
                     onClick={() => onPinItem(item)}
                     disabled={isLoading}
-                    className="absolute bottom-2 left-2 right-2 inline-flex items-center justify-center gap-1 rounded-md bg-white/90 px-2 py-1.5 text-[11px] font-semibold text-gray-800 shadow-sm transition hover:bg-white disabled:opacity-60"
+                    className="absolute bottom-1 left-1 right-1 inline-flex items-center justify-center gap-1 rounded-md bg-white/90 px-2 py-1 text-[10px] font-semibold text-gray-800 shadow-sm transition hover:bg-white disabled:opacity-60 sm:bottom-2 sm:left-2 sm:right-2 sm:py-1.5 sm:text-[11px]"
                   >
                     <PinIcon className="h-3.5 w-3.5" />
                     Sabitle
