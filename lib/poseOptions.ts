@@ -32,4 +32,12 @@ export const POSE_OPTIONS: PoseOption[] = [
     label: 'Low-Angle Editorial',
     instruction: 'full-body fashion editorial shot, model standing with a strong balanced posture, legs slightly apart, hands in pockets, shoulders relaxed, low-angle camera perspective, product clear and readable, garment fit preserved, clean fabric surface, trouser hem preserved, editorial fashion look, premium minimal interior, soft natural window light, minimal background, product in focus',
   },
+  {
+    label: 'Close-Up Lower',
+    instruction: 'close-up fashion framing focused on the lower half of the outfit, model standing naturally, lower body and garment details clearly visible, crop from waist to feet, clean studio or minimal background, product fit and texture preserved, balanced composition, soft natural light, premium look',
+  },
+  {
+    label: 'Close-Up Upper',
+    instruction: 'close-up fashion framing focused on the upper half of the outfit, crop from head to waist, shoulders, neckline, and upper garment details clearly visible, model standing naturally, clean studio or minimal background, product fit and texture preserved, balanced composition, soft natural light, premium look',
+  },
 ];

@@ -491,8 +491,14 @@ const App: React.FC = () => {
 
   const handleSelectCustomScene = useCallback((customPrompt: string) => {
     setError(null);
-    setSelectedScene('studio'); // Set scene to a default value
+    setSelectedScene(null);
     setCustomScenePrompt(customPrompt);
+  }, []);
+
+  const handleSelectScene = useCallback((scene: SceneOption) => {
+    setError(null);
+    setSelectedScene(scene);
+    setCustomScenePrompt(null);
   }, []);
 
   const handleGenerateScene = useCallback(async () => {
@@ -570,12 +576,13 @@ const App: React.FC = () => {
           >
             <main className="flex-grow relative flex flex-col md:flex-row overflow-hidden">
               <div className="w-full h-full flex-grow flex flex-col items-center justify-center bg-white pb-16 relative">
-                <div className="absolute top-6 left-6 z-30">
+                <div className="fixed inset-x-4 bottom-4 z-30 md:hidden">
                   <UndoRedoBar
                     canUndo={canUndo}
                     canRedo={canRedo}
                     onUndo={handleUndo}
                     onRedo={handleRedo}
+                    onStartOver={handleStartOver}
                   />
                 </div>
                 <Canvas
@@ -672,7 +679,7 @@ const App: React.FC = () => {
                       selectedScene={selectedScene}
                       selectedLighting={selectedLighting}
                       qualityMode={sceneQualityMode}
-                      onSelectScene={setSelectedScene}
+                      onSelectScene={handleSelectScene}
                       onSelectLighting={setSelectedLighting}
                       onChangeQualityMode={setSceneQualityMode}
                       onSelectCustomScene={handleSelectCustomScene}

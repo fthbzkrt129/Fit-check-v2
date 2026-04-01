@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
 */
 import React, { useState } from 'react';
-import { RotateCcwIcon, ChevronLeftIcon, ChevronRightIcon, DownloadIcon, Undo2Icon, Redo2Icon } from './icons';
+import { RotateCcwIcon, DownloadIcon, Undo2Icon, Redo2Icon } from './icons';
 import Spinner from './Spinner';
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -26,59 +26,10 @@ interface CanvasProps {
 }
 
 const Canvas: React.FC<CanvasProps> = ({ displayImageUrl, onStartOver, onDownload, canDownload, isLoading, loadingMessage, onSelectPose, poseInstructions, currentPoseIndex, availablePoseKeys, canUndo, canRedo, onUndo, onRedo, onRegenerate }) => {
-  const [isPoseMenuOpen, setIsPoseMenuOpen] = useState(false);
-  
-  const handlePreviousPose = () => {
-    if (isLoading || availablePoseKeys.length <= 1) return;
-
-    const currentPoseInstruction = poseInstructions[currentPoseIndex];
-    const currentIndexInAvailable = availablePoseKeys.indexOf(currentPoseInstruction);
-    
-    // Fallback if current pose not in available list (shouldn't happen)
-    if (currentIndexInAvailable === -1) {
-        onSelectPose((currentPoseIndex - 1 + poseInstructions.length) % poseInstructions.length);
-        return;
-    }
-
-    const prevIndexInAvailable = (currentIndexInAvailable - 1 + availablePoseKeys.length) % availablePoseKeys.length;
-    const prevPoseInstruction = availablePoseKeys[prevIndexInAvailable];
-    const newGlobalPoseIndex = poseInstructions.indexOf(prevPoseInstruction);
-    
-    if (newGlobalPoseIndex !== -1) {
-        onSelectPose(newGlobalPoseIndex);
-    }
-  };
-
-  const handleNextPose = () => {
-    if (isLoading) return;
-
-    const currentPoseInstruction = poseInstructions[currentPoseIndex];
-    const currentIndexInAvailable = availablePoseKeys.indexOf(currentPoseInstruction);
-
-    // Fallback or if there are no generated poses yet
-    if (currentIndexInAvailable === -1 || availablePoseKeys.length === 0) {
-        onSelectPose((currentPoseIndex + 1) % poseInstructions.length);
-        return;
-    }
-    
-    const nextIndexInAvailable = currentIndexInAvailable + 1;
-    if (nextIndexInAvailable < availablePoseKeys.length) {
-        // There is another generated pose, navigate to it
-        const nextPoseInstruction = availablePoseKeys[nextIndexInAvailable];
-        const newGlobalPoseIndex = poseInstructions.indexOf(nextPoseInstruction);
-        if (newGlobalPoseIndex !== -1) {
-            onSelectPose(newGlobalPoseIndex);
-        }
-    } else {
-        // At the end of generated poses, generate the next one from the master list
-        const newGlobalPoseIndex = (currentPoseIndex + 1) % poseInstructions.length;
-        onSelectPose(newGlobalPoseIndex);
-    }
-  };
-  
+  const [isPoseDrawerOpen, setIsPoseDrawerOpen] = useState(false);
   return (
     <div className="w-full h-full flex flex-col items-center justify-center p-4 relative animate-zoom-in group gap-4">
-      <div className="absolute top-4 left-4 z-30 flex items-center gap-2">
+      <div className="absolute top-4 left-4 z-30 hidden items-center gap-2 md:flex">
         <button
             onClick={onUndo}
             disabled={!canUndo || isLoading}
@@ -107,7 +58,7 @@ const Canvas: React.FC<CanvasProps> = ({ displayImageUrl, onStartOver, onDownloa
             <RotateCcwIcon className="w-4 h-4 mr-1.5" />
             Yeniden Üret
         </button>
-        <button 
+        <button
             onClick={onStartOver}
             className="flex items-center justify-center text-center bg-white/60 border border-gray-300/80 text-gray-700 font-semibold py-2 px-4 rounded-full transition-all duration-200 ease-in-out hover:bg-white hover:border-gray-400 active:scale-95 text-sm backdrop-blur-sm"
         >
@@ -150,67 +101,123 @@ const Canvas: React.FC<CanvasProps> = ({ displayImageUrl, onStartOver, onDownloa
       </div>
 
       {displayImageUrl && (
-        <div className="fixed inset-x-4 bottom-24 z-30 md:absolute md:inset-x-auto md:bottom-24 md:left-1/2 md:-translate-x-1/2">
-          <AnimatePresence>
-            {isPoseMenuOpen && !isLoading && (
-              <motion.div
-                initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                transition={{ duration: 0.2, ease: 'easeOut' }}
-                className="absolute bottom-full left-1/2 mb-3 w-full max-w-sm -translate-x-1/2 rounded-2xl border border-gray-200/80 bg-white/90 p-2 backdrop-blur-lg shadow-lg"
-              >
-                <div className="grid grid-cols-2 gap-2">
-                  {poseInstructions.map((pose, index) => (
-                    <button
-                      key={pose}
-                      onClick={() => {
-                        onSelectPose(index);
-                        setIsPoseMenuOpen(false);
-                      }}
-                      disabled={isLoading || index === currentPoseIndex}
-                      className="w-full rounded-md p-2 text-left text-sm font-medium text-gray-800 hover:bg-gray-200/70 disabled:cursor-not-allowed disabled:bg-gray-200/70 disabled:font-bold disabled:opacity-50"
-                    >
-                      {pose}
-                    </button>
-                  ))}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+        <div className="fixed top-4 left-4 z-30 w-[calc(100vw-2rem)] max-w-sm md:absolute md:inset-x-auto md:top-auto md:bottom-24 md:left-1/2 md:w-auto md:-translate-x-1/2 md:max-w-none">
+          <div className="md:hidden">
+            <button
+              type="button"
+              onClick={() => setIsPoseDrawerOpen(true)}
+              disabled={isLoading}
+              className="inline-flex items-center rounded-full border border-gray-200/80 bg-white/90 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-gray-600 shadow-[0_10px_24px_rgba(0,0,0,0.10)] backdrop-blur-lg disabled:opacity-60"
+            >
+              Pose
+            </button>
 
-          <div className="rounded-[1.25rem] border border-gray-200/80 bg-white/90 p-2 shadow-[0_18px_40px_rgba(0,0,0,0.18)] backdrop-blur-md">
-            <div className="flex items-center gap-2 rounded-2xl bg-white px-2 py-2 text-sm font-semibold text-gray-800">
-              <button
-                type="button"
-                onClick={() => setIsPoseMenuOpen((prev) => !prev)}
-                disabled={isLoading}
-                className="flex min-w-0 flex-1 items-center rounded-2xl px-3 py-2 text-left transition-all hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
-                aria-label="Poz Üret"
-              >
-                <span className="truncate">{poseInstructions[currentPoseIndex]}</span>
-              </button>
-              <div className="flex items-center gap-1 text-gray-500">
-                <button
-                  type="button"
-                  onClick={handlePreviousPose}
-                  aria-label="Previous pose"
-                  className="rounded-full p-2 transition-all hover:bg-gray-100 active:scale-90 disabled:opacity-50"
-                  disabled={isLoading}
+            <AnimatePresence>
+              {isPoseDrawerOpen && !isLoading && (
+                <motion.div
+                  className="fixed inset-0 z-40 bg-black/20"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={() => setIsPoseDrawerOpen(false)}
                 >
-                  <ChevronLeftIcon className="h-5 w-5 text-gray-800" />
-                </button>
-                <button
-                  type="button"
-                  onClick={handleNextPose}
-                  aria-label="Next pose"
-                  className="rounded-full p-2 transition-all hover:bg-gray-100 active:scale-90 disabled:opacity-50"
-                  disabled={isLoading}
+                  <motion.aside
+                    className="absolute left-0 top-0 h-full w-[82vw] max-w-xs border-r border-gray-200 bg-white p-4 shadow-[16px_0_40px_rgba(0,0,0,0.18)]"
+                    initial={{ x: -280 }}
+                    animate={{ x: 0 }}
+                    exit={{ x: -280 }}
+                    transition={{ duration: 0.22, ease: 'easeOut' }}
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    <div className="mb-4 flex items-center justify-between">
+                      <div>
+                        <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-gray-500">Pose</div>
+                        <div className="mt-1 text-sm text-gray-600">Kısa ve sade seçim</div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setIsPoseDrawerOpen(false)}
+                        className="rounded-full border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600"
+                      >
+                        Kapat
+                      </button>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      {poseInstructions.map((pose, index) => {
+                        const isSelected = index === currentPoseIndex;
+                        return (
+                          <button
+                            key={pose}
+                            type="button"
+                            onClick={() => {
+                              onSelectPose(index);
+                              setIsPoseDrawerOpen(false);
+                            }}
+                            aria-pressed={isSelected}
+                            className={`rounded-full border px-3 py-2 text-[12px] font-medium transition-all ${
+                              isSelected
+                                ? 'border-gray-900 bg-gray-900 text-white'
+                                : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                            }`}
+                          >
+                            {pose}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </motion.aside>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          <div className="hidden md:inline-block relative">
+            <button
+              type="button"
+              onClick={() => setIsPoseDrawerOpen((prev) => !prev)}
+              disabled={isLoading}
+              className="inline-flex items-center rounded-full border border-gray-200/80 bg-white/90 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-gray-600 shadow-[0_10px_24px_rgba(0,0,0,0.10)] backdrop-blur-lg disabled:opacity-60"
+            >
+              Pose
+            </button>
+
+            <AnimatePresence>
+              {isPoseDrawerOpen && !isLoading && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 8 }}
+                  transition={{ duration: 0.18, ease: 'easeOut' }}
+                  className="absolute bottom-full left-1/2 mb-3 w-[min(36rem,calc(100vw-2rem))] -translate-x-1/2 rounded-2xl border border-gray-200/80 bg-white/90 p-3 shadow-[0_14px_30px_rgba(0,0,0,0.12)] backdrop-blur-lg"
                 >
-                  <ChevronRightIcon className="h-5 w-5 text-gray-800" />
-                </button>
-              </div>
-            </div>
+                  <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-gray-500">Pose</div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {poseInstructions.map((pose, index) => {
+                      const isSelected = index === currentPoseIndex;
+                      return (
+                        <button
+                          key={pose}
+                          type="button"
+                          onClick={() => {
+                            onSelectPose(index);
+                            setIsPoseDrawerOpen(false);
+                          }}
+                          aria-pressed={isSelected}
+                          className={`rounded-full border px-2 py-2 text-[12px] font-medium transition-all ${
+                            isSelected
+                              ? 'border-gray-900 bg-gray-900 text-white'
+                              : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          {pose}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       )}
