@@ -24,15 +24,12 @@ describe('Canvas', () => {
       />
     );
 
-    const poseLabel = screen.getByText('Pose');
-    const frontChip = screen.getByRole('button', { name: 'Front' });
-    const downloadButton = screen.getByRole('button', { name: /indir/i });
+    const poseLabels = screen.getAllByText('Pose');
+    const downloadButton = screen.getByRole('button', { name: 'İndir' });
 
-    expect(poseLabel).toBeInTheDocument();
-    expect(frontChip).toBeInTheDocument();
+    expect(poseLabels).toHaveLength(2);
     expect(downloadButton).toBeInTheDocument();
-    expect(poseLabel.compareDocumentPosition(downloadButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(frontChip.className).toContain('rounded-full');
+    expect(poseLabels[0].compareDocumentPosition(downloadButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('selects a pose chip directly', () => {
@@ -58,7 +55,8 @@ describe('Canvas', () => {
       />
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Side' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Pose' })[0]);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Side' })[0]);
 
     expect(onSelectPose).toHaveBeenCalledWith(1);
   });

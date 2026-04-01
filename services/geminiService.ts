@@ -226,6 +226,69 @@ Category-specific instruction: ${buildGarmentInstructions(category, topLength, d
     return handleApiResponse(response);
 };
 
+export const generateIdentityReferenceImage = async (newModelImage: File): Promise<string> => {
+    const newModelImagePart = await fileToPart(newModelImage);
+    const prompt = `You are an expert fashion photography AI. Create a clean full-body identity reference image from this person photo.
+
+Critical rules:
+1. Preserve the person's identity, face, hair, and body characteristics.
+2. Use a neutral standing fashion pose.
+3. Use a clean light studio background.
+4. Keep the clothing simple and non-distracting so identity and body proportions remain clear.
+5. Return ONLY the final image.`;
+
+    const response = await ai.models.generateContent({
+        model,
+        contents: { parts: [newModelImagePart, { text: prompt }] },
+        config: {
+            responseModalities: [Modality.IMAGE, Modality.TEXT],
+        },
+    });
+
+    return handleApiResponse(response);
+};
+
+export const generateModelSwapImage = async (
+    referenceLookImageUrl: string,
+    identityReferenceImageUrl: string,
+): Promise<string> => {
+    const referenceLookImagePart = dataUrlToPart(referenceLookImageUrl);
+    const identityReferenceImagePart = dataUrlToPart(identityReferenceImageUrl);
+
+    const prompt = `You are an expert fashion identity transfer AI. You will receive two labeled images.
+
+Image A: the reference fashion look image. It is the source of truth for the outfit, styling, pose, framing, and composition.
+Image B: the identity reference image. It is the source of truth for the new person's face, hair, and body characteristics.
+
+Your task is to generate a single photorealistic image where the person from Image B replaces the mannequin/model from Image A.
+
+Critical rules:
+1. Preserve the outfit from Image A exactly. Do not redesign, restyle, add, remove, or reinterpret any garment or accessory.
+2. Preserve the pose, camera angle, framing, crop, and composition from Image A as closely as possible.
+3. Replace the person identity with Image B. The final face, hair, and body characteristics must clearly resemble Image B, not Image A.
+4. Keep garment colors, fit, silhouette, layering, hem lengths, fabric appearance, and visible accessories identical to Image A.
+5. Do not borrow clothing from Image B.
+6. If the final person still looks like Image A, the result is incorrect.
+7. The result must look like one coherent fashion photograph, with realistic anatomy, lighting, shadows, and garment drape.
+8. Return ONLY the final image.`;
+
+    const response = await ai.models.generateContent({
+        model,
+        contents: { parts: [
+            { text: 'Image A: reference fashion look image.' },
+            referenceLookImagePart,
+            { text: 'Image B: new person identity reference image.' },
+            identityReferenceImagePart,
+            { text: prompt },
+        ] },
+        config: {
+            responseModalities: [Modality.IMAGE, Modality.TEXT],
+        },
+    });
+
+    return handleApiResponse(response);
+};
+
 export const generatePoseVariation = async (tryOnImageUrl: string, poseInstruction: string): Promise<string> => {
     const tryOnImagePart = dataUrlToPart(tryOnImageUrl);
     const prompt = `You are an expert fashion photographer AI. Take this image and regenerate it from a different perspective. The person, clothing, and background style must remain identical. The new perspective should be: "${poseInstruction}". Return ONLY the final image.`;
