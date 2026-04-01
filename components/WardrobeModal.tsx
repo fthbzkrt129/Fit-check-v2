@@ -5,6 +5,7 @@
 import React, { useState } from 'react';
 import type { GarmentCategory, WardrobeItem } from '../types';
 import { UploadCloudIcon, CheckCircleIcon, PinIcon } from './icons';
+import { formatWardrobeItemName } from '../lib/wardrobeItemName';
 
 interface WardrobePanelProps {
   onGarmentSelect: (garmentFile: File, garmentInfo: WardrobeItem) => void;
@@ -53,6 +54,8 @@ const urlToFile = (url: string, filename: string): Promise<File> => {
 const categoryLabels: Record<GarmentCategory, string> = {
     top: 'Üst Giyim',
     bottom: 'Alt Giyim',
+    outerwear: 'Dış Giyim',
+    dress: 'Elbise',
     footwear: 'Ayakkabı',
     accessory: 'Aksesuar',
 };
@@ -85,7 +88,7 @@ const WardrobePanel: React.FC<WardrobePanelProps> = ({ onGarmentSelect, onPinIte
             }
             const customGarmentInfo: WardrobeItem = {
                 id: `custom-${Date.now()}`,
-                name: file.name,
+                name: formatWardrobeItemName(file.name),
                 url: URL.createObjectURL(file),
                 source: 'user',
                 isPinned: false,
@@ -112,7 +115,7 @@ const WardrobePanel: React.FC<WardrobePanelProps> = ({ onGarmentSelect, onPinIte
                 >
                 <img src={item.url} alt={item.name} className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <p className="text-white text-xs font-bold text-center p-1">{item.name}</p>
+                    <p className="max-w-full truncate px-2 text-white text-xs font-bold text-center" title={item.name}>{item.name}</p>
                 </div>
                 {item.source === 'system' && (
                     <div className="absolute left-2 top-2 rounded-full bg-white/90 px-2 py-1 text-[10px] font-semibold text-gray-700 shadow-sm">
