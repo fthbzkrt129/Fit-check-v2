@@ -58,4 +58,17 @@ describe('pinnedWardrobe', () => {
 
     expect(getPinnedWardrobeItems()).toEqual([]);
   });
+
+  it('normalizes legacy pinned items that are missing category metadata', () => {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify([
+        createPinnedItem({ id: 'legacy-item', category: undefined, name: 'unnamed' }),
+      ]),
+    );
+
+    expect(getPinnedWardrobeItems()).toEqual([
+      createPinnedItem({ id: 'legacy-item', category: 'top', name: 'Uploaded Top' }),
+    ]);
+  });
 });

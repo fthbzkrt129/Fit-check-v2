@@ -4,6 +4,7 @@
  */
 
 import type { GarmentCategory, SceneVariation, TopLengthOption, WardrobeItem } from '../types';
+import { normalizeWardrobeItems } from './normalizeWardrobeItems';
 
 const STORAGE_KEY = 'fit-check-session';
 
@@ -44,7 +45,12 @@ export const loadSession = (): SessionData | null => {
   }
 
   try {
-    return JSON.parse(raw) as SessionData;
+    const parsed = JSON.parse(raw) as SessionData;
+
+    return {
+      ...parsed,
+      wardrobeUserItems: normalizeWardrobeItems(parsed.wardrobeUserItems ?? [], parsed.activeCategory ?? 'top'),
+    };
   } catch {
     console.warn('[sessionStorage] Corrupted session data, ignoring.');
     return null;

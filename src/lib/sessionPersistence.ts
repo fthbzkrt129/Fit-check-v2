@@ -4,6 +4,7 @@
  */
 
 import type { GarmentCategory, OutfitLayer, SceneVariation, TopLengthOption, WardrobeItem } from '../../types';
+import { normalizeWardrobeItems } from '../../lib/normalizeWardrobeItems';
 
 /**
  * SessionState: Complete session state for persistence across page reloads
@@ -74,7 +75,10 @@ export const restoreSessionState = (): SessionState | null => {
       return null;
     }
 
-    return parsed;
+    return {
+      ...parsed,
+      pinnedWardrobe: normalizeWardrobeItems(parsed.pinnedWardrobe ?? [], parsed.activeCategory ?? 'top'),
+    };
   } catch (err) {
     console.warn('[sessionPersistence] Failed to restore session:', err);
     return null;

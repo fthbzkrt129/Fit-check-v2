@@ -99,4 +99,24 @@ describe('sessionStorage', () => {
 
     expect(loaded?.wardrobeUserItems[0].url).toBe('https://example.com/shirt.jpg');
   });
+
+  it('normalizes legacy wardrobe items using the active category', () => {
+    const data = createSessionData({
+      activeCategory: 'bottom',
+      wardrobeUserItems: [
+        { id: 'legacy-1', name: 'fit-check-1774996900', url: 'blob:legacy-item', source: 'user' },
+      ],
+    });
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+
+    expect(loadSession()).toEqual(
+      createSessionData({
+        activeCategory: 'bottom',
+        wardrobeUserItems: [
+          { id: 'legacy-1', name: 'Uploaded Bottom', url: 'blob:legacy-item', source: 'user', category: 'bottom' },
+        ],
+      }),
+    );
+  });
 });

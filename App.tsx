@@ -26,6 +26,7 @@ import { downloadImage } from './lib/downloadImage';
 import { blobUrlToDataUrl } from './lib/imagePersistence';
 import { POSE_OPTIONS } from './lib/poseOptions';
 import { addPinnedWardrobeItem, getPinnedWardrobeItems } from './lib/pinnedWardrobe';
+import { normalizeWardrobeItems } from './lib/normalizeWardrobeItems';
 import { saveSession, loadSession, clearSession } from './lib/sessionStorage';
 import type { SessionData } from './lib/sessionStorage';
 import { saveSessionState, restoreSessionState, clearSessionData } from './src/lib/sessionPersistence';
@@ -78,7 +79,7 @@ const App: React.FC = () => {
   const [currentPoseIndex, setCurrentPoseIndex] = useState(initialSession?.currentPoseIndex ?? 0);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [wardrobe, setWardrobe] = useState<WardrobeItem[]>(() => {
-    const userItems = initialSession?.wardrobeUserItems ?? [];
+    const userItems = normalizeWardrobeItems(initialSession?.wardrobeUserItems ?? [], initialSession?.activeCategory ?? 'top');
     return [...defaultWardrobe, ...getPinnedWardrobeItems(), ...userItems.filter(i => i.source === 'user')];
   });
   const [activeCategory, setActiveCategory] = useState<GarmentCategory>(initialSession?.activeCategory ?? 'top');
@@ -114,7 +115,7 @@ const App: React.FC = () => {
       }
       if (restoredSession.pinnedWardrobe && restoredSession.pinnedWardrobe.length > 0) {
         setWardrobe(prev => {
-          const userItems = restoredSession.pinnedWardrobe || [];
+          const userItems = normalizeWardrobeItems(restoredSession.pinnedWardrobe || [], restoredSession.activeCategory ?? 'top');
           return [...defaultWardrobe, ...getPinnedWardrobeItems(), ...userItems.filter(i => i.source === 'user')];
         });
       }

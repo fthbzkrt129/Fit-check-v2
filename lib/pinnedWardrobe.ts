@@ -1,4 +1,5 @@
 import type { WardrobeItem } from '../types';
+import { normalizeWardrobeItems } from './normalizeWardrobeItems';
 
 const STORAGE_KEY = 'fit-check:pinned-wardrobe';
 
@@ -11,14 +12,14 @@ export const getPinnedWardrobeItems = (): WardrobeItem[] => {
   }
 
   try {
-    return (JSON.parse(raw) as WardrobeItem[]).filter(isPersistableWardrobeItem);
+    return normalizeWardrobeItems((JSON.parse(raw) as WardrobeItem[]).filter(isPersistableWardrobeItem));
   } catch {
     return [];
   }
 };
 
 export const savePinnedWardrobeItems = (items: WardrobeItem[]) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(items.filter(isPersistableWardrobeItem)));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizeWardrobeItems(items.filter(isPersistableWardrobeItem))));
 };
 
 export const addPinnedWardrobeItem = (item: WardrobeItem) => {
