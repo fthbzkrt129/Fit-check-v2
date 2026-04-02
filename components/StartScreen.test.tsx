@@ -1,4 +1,3 @@
-import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
@@ -36,11 +35,11 @@ describe('StartScreen', () => {
     const onExperimentalStyling = vi.fn();
 
     render(
-      React.createElement(StartScreen as unknown as React.ElementType, {
-        onModelFinalized,
-        onExperimentalStyling,
-        ...props,
-      }),
+      <StartScreen
+        onModelFinalized={onModelFinalized}
+        onExperimentalStyling={onExperimentalStyling}
+        {...props}
+      />,
     );
 
     const input = document.querySelector('#image-upload-start') as HTMLInputElement;
