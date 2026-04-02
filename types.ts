@@ -47,3 +47,26 @@ export interface SceneVariation {
   qualityMode?: SceneQualityMode;
   customPrompt?: string;
 }
+
+export type StylingMode = 'standard' | 'experimental';
+
+export type ExperimentalImageSource = string | File | Blob;
+
+export interface ExperimentalGarmentSelection {
+  id: string;
+  name: string;
+  category: GarmentCategory;
+  source: ExperimentalImageSource;
+}
+
+export interface ExperimentalBundleGarment extends ExperimentalGarmentSelection {
+  imageIndex: number;
+}
+
+export interface ExperimentalBundleInput {
+  baseModelImage: ExperimentalImageSource;
+  imageInputs: ExperimentalImageSource[];
+  garments: ExperimentalBundleGarment[];
+  finalSceneDescription?: string;
+  prompt: string;
+}
