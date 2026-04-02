@@ -62,7 +62,7 @@ const categoryLabels: Record<GarmentCategory, string> = {
 
 const WardrobePanel: React.FC<WardrobePanelProps> = ({ onGarmentSelect, onPinItem, activeGarmentIds, isLoading, wardrobe, activeCategory }) => {
     const [error, setError] = useState<string | null>(null);
-    const visibleWardrobe = wardrobe.filter((item) => item.category === activeCategory);
+    const visibleWardrobe = wardrobe.filter((item) => !item.category || item.category === activeCategory);
 
     const handleGarmentClick = async (item: WardrobeItem) => {
         if (isLoading || activeGarmentIds.includes(item.id)) return;
@@ -88,9 +88,8 @@ const WardrobePanel: React.FC<WardrobePanelProps> = ({ onGarmentSelect, onPinIte
             }
             const customGarmentInfo: WardrobeItem = {
                 id: `custom-${Date.now()}`,
-                name: formatWardrobeItemName(file.name, activeCategory),
+                name: formatWardrobeItemName(file.name),
                 url: URL.createObjectURL(file),
-                category: activeCategory,
                 source: 'user',
                 isPinned: false,
             };
@@ -115,8 +114,8 @@ const WardrobePanel: React.FC<WardrobePanelProps> = ({ onGarmentSelect, onPinIte
                 aria-label={`Select ${item.name}`}
                 >
                 <img src={item.url} alt={item.name} className="w-full h-full object-cover" />
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/35 to-transparent px-2 pb-2 pt-8">
-                    <p className="line-clamp-2 text-[11px] font-semibold leading-4 text-white" title={item.name}>{item.name}</p>
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <p className="max-w-full truncate px-2 text-white text-xs font-bold text-center" title={item.name}>{item.name}</p>
                 </div>
                 {item.source === 'system' && (
                     <div className="absolute left-2 top-2 rounded-full bg-white/90 px-2 py-1 text-[10px] font-semibold text-gray-700 shadow-sm">
