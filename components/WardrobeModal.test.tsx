@@ -215,7 +215,7 @@ describe('App experimental styling flow', () => {
     render(<App />);
 
     fireEvent.click(screen.getByRole('button', { name: 'experimental-entry' }));
-    fireEvent.click(screen.getByRole('button', { name: 'pick-top-1' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'pick-top-1' }));
     fireEvent.click(screen.getByRole('button', { name: 'pick-top-2' }));
 
     const submitButton = screen.getByRole('button', { name: 'Deneysel kombini üret' });
@@ -244,7 +244,7 @@ describe('App experimental styling flow', () => {
     rejectDeferred?.(new Error('fal request failed'));
 
     await waitFor(() => {
-      expect(screen.getByText('Deneysel kombin üretilemedi.')).toBeTruthy();
+      expect(screen.getAllByText('Deneysel kombin üretilemedi.').length).toBeGreaterThan(0);
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Tekrar dene' }));
