@@ -1,8 +1,8 @@
 # Yol Haritası: fit-check
 
 **Milat:** v1.0 — Temel İyileştirmeler
-**Gereksinimler:** 10
-**Aşamalar:** 3
+**Gereksinimler:** 15
+**Aşamalar:** 4
 
 ---
 
@@ -61,6 +61,26 @@
 
 ---
 
+## Phase 4: Deneysel Kombin Giydirme
+
+**Hedef:** fal.ai ile tek istekte toplu kombin üretimi için alternatif deneysel akış
+
+**Gereksinimler:** EXP-01, EXP-02, EXP-03, EXP-04, EXP-05
+
+**Başarı Kriterleri:**
+1. Görsel upload + model üretimi tamamlandıktan sonra kullanıcı `Deneysel kombin giydir` butonunu görür ve standart `Proceed to Styling` akışı bozulmaz
+2. Kullanıcı aktif kombin parçalarını + model görselini tek final istekte fal.ai'ye gönderebilir
+3. Deneysel akış mevcut Gemini step-by-step deneyimini bozmaz
+4. fal.ai entegrasyonu gerekli env setup ile planlanmış olur
+
+**Plans:** 2 plans
+
+**Plans:**
+- [x] 04-deneysel-kombin-giydir-fal-ai-01-PLAN.md — Add fal.ai service foundation, prompt builder, and env contract ✅
+- [x] 04-deneysel-kombin-giydir-fal-ai-02-PLAN.md — Add experimental entry CTA and final batch generation flow ✅
+
+---
+
 ## Kapsama
 
 | Requirement | Phase | Status |
@@ -75,8 +95,12 @@
 | UNDO-01 | Phase 3 | Beklemede |
 | UNDO-02 | Phase 3 | Beklemede |
 | UNDO-03 | Phase 3 | Beklemede |
-
-**Coverage:** 10/10 gereksinim haritalandırıldı ✓
+| EXP-01 | Phase 4 | Tamamlandı |
+| EXP-02 | Phase 4 | Tamamlandı |
+| EXP-03 | Phase 4 | Tamamlandı |
+| EXP-04 | Phase 4 | Tamamlandı |
+| EXP-05 | Phase 4 | Tamamlandı |
+**Coverage:** 15/15 gereksinim haritalandırıldı ✓
 
 ---
-*Yol haritası güncellendi: 2026-03-30*
+*Yol haritası güncellendi: 2026-04-02*
