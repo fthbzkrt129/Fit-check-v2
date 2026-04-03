@@ -120,6 +120,41 @@ a {
   font-size: 1.15rem;
 }
 
+.login-form {
+  display: grid;
+  gap: 16px;
+}
+
+.login-form__field {
+  display: grid;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.login-form input {
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  color: inherit;
+}
+
+.tenant-shell {
+  display: grid;
+  gap: 24px;
+}
+
+.tenant-shell__header {
+  display: grid;
+  gap: 8px;
+}
+
+.tenant-shell__header h1 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3rem);
+}
+
 .not-found {
   display: grid;
   gap: 20px;
