@@ -1,0 +1,20 @@
+project_id = "fit-check-web"
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[studio]
+port = 54323
+
+[auth]
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["http://localhost:3000/auth/callback", "https://fitcheck.app/auth/callback"]
+enable_signup = true
+
+[api]
+port = 54321
+
+[analytics]
+enabled = false

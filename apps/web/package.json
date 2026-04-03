@@ -8,7 +8,7 @@
     "build": "next build",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "test:db": "vitest run --project db"
+    "test:db": "supabase test db --local"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.2",
