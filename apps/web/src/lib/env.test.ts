@@ -23,6 +23,32 @@ describe("env contract", () => {
     ).toThrowError(/SUPABASE_SERVICE_ROLE_KEY, GEMINI_API_KEY, FAL_KEY/);
   });
 
+  it("returns normalized key names for downstream auth modules", () => {
+    expect(
+      getPublicEnv({
+        NEXT_PUBLIC_SUPABASE_URL: "https://project.supabase.co",
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: "anon-key",
+        NEXT_PUBLIC_ROOT_DOMAIN: "fitcheck.app"
+      })
+    ).toEqual({
+      supabaseUrl: "https://project.supabase.co",
+      supabaseAnonKey: "anon-key",
+      rootDomain: "fitcheck.app"
+    });
+
+    expect(
+      getServerEnv({
+        SUPABASE_SERVICE_ROLE_KEY: "service-role",
+        GEMINI_API_KEY: "gemini-key",
+        FAL_KEY: "fal-key"
+      })
+    ).toEqual({
+      supabaseServiceRoleKey: "service-role",
+      geminiApiKey: "gemini-key",
+      falKey: "fal-key"
+    });
+  });
+
   it("documents downstream scripts in the app manifest", async () => {
     const { default: packageJson } = await import("../../package.json", {
       with: { type: "json" }

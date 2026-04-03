@@ -53,7 +53,11 @@ export const getPublicEnv = (input: PublicEnvInput = readPublicEnv()) => {
     throw buildEnvError("public", parsed.error.issues);
   }
 
-  return parsed.data;
+  return {
+    supabaseUrl: parsed.data.NEXT_PUBLIC_SUPABASE_URL,
+    supabaseAnonKey: parsed.data.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    rootDomain: parsed.data.NEXT_PUBLIC_ROOT_DOMAIN
+  };
 };
 
 export const getServerEnv = (input: ServerEnvInput = readServerEnv()) => {
@@ -63,5 +67,9 @@ export const getServerEnv = (input: ServerEnvInput = readServerEnv()) => {
     throw buildEnvError("server", parsed.error.issues);
   }
 
-  return parsed.data;
+  return {
+    supabaseServiceRoleKey: parsed.data.SUPABASE_SERVICE_ROLE_KEY,
+    geminiApiKey: parsed.data.GEMINI_API_KEY,
+    falKey: parsed.data.FAL_KEY
+  };
 };
