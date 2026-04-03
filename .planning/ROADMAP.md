@@ -2,7 +2,7 @@
 
 **Milat:** v1.0 — Temel İyileştirmeler
 **Gereksinimler:** 15
-**Aşamalar:** 4
+**Aşamalar:** 5
 
 ---
 
@@ -81,6 +81,21 @@
 
 ---
 
+## Phase 5: Backend guvenligi, API key izolasyonu, multi-tenant SaaS mimarisi ve PostgreSQL stratejisi
+
+**Goal:** Exposed AI key riskini kapatan, Supabase-first auth + tenant izolasyonu + server-side AI gateway temelli yeni SaaS omurgasi
+**Requirements**: SAAS-01, SAAS-02, SAAS-03, SAAS-04, SAAS-05
+**Depends on:** Phase 4
+**Plans:** 4 plans
+
+Plans:
+- [x] 05-backend-guvenligi-api-key-izolasyonu-multi-tenant-saas-mimarisi-ve-postgresql-stratejisi-01-PLAN.md — Scaffold the new `apps/web` SaaS app foundation and env contract
+- [ ] 05-backend-guvenligi-api-key-izolasyonu-multi-tenant-saas-mimarisi-ve-postgresql-stratejisi-02-PLAN.md — Add Supabase SSR auth and subdomain tenant routing shell
+- [ ] 05-backend-guvenligi-api-key-izolasyonu-multi-tenant-saas-mimarisi-ve-postgresql-stratejisi-03-PLAN.md — Create tenant schema, RLS, and first-login workspace bootstrap
+- [ ] 05-backend-guvenligi-api-key-izolasyonu-multi-tenant-saas-mimarisi-ve-postgresql-stratejisi-04-PLAN.md — Move AI providers behind tenant-aware server routes
+
+---
+
 ## Kapsama
 
 | Requirement | Phase | Status |
@@ -102,5 +117,4 @@
 | EXP-05 | Phase 4 | Tamamlandı |
 **Coverage:** 15/15 gereksinim haritalandırıldı ✓
 
----
 *Yol haritası güncellendi: 2026-04-02*
