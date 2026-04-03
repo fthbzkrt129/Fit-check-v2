@@ -15,6 +15,18 @@ const serverEnvSchema = z.object({
 type PublicEnvInput = Partial<Record<keyof z.infer<typeof publicEnvSchema>, string | undefined>>;
 type ServerEnvInput = Partial<Record<keyof z.infer<typeof serverEnvSchema>, string | undefined>>;
 
+const readPublicEnv = (): PublicEnvInput => ({
+  NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  NEXT_PUBLIC_ROOT_DOMAIN: process.env.NEXT_PUBLIC_ROOT_DOMAIN
+});
+
+const readServerEnv = (): ServerEnvInput => ({
+  SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+  GEMINI_API_KEY: process.env.GEMINI_API_KEY,
+  FAL_KEY: process.env.FAL_KEY
+});
+
 const getMissingKeys = (issues: ZodIssue[]) => {
   return Array.from(
     new Set(
@@ -34,7 +46,7 @@ const buildEnvError = (scope: string, issues: ZodIssue[]) => {
   );
 };
 
-export const getPublicEnv = (input: PublicEnvInput = process.env) => {
+export const getPublicEnv = (input: PublicEnvInput = readPublicEnv()) => {
   const parsed = publicEnvSchema.safeParse(input);
 
   if (!parsed.success) {
@@ -44,7 +56,7 @@ export const getPublicEnv = (input: PublicEnvInput = process.env) => {
   return parsed.data;
 };
 
-export const getServerEnv = (input: ServerEnvInput = process.env) => {
+export const getServerEnv = (input: ServerEnvInput = readServerEnv()) => {
   const parsed = serverEnvSchema.safeParse(input);
 
   if (!parsed.success) {
