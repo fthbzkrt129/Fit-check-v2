@@ -5,6 +5,7 @@
 
 import { GoogleGenAI, GenerateContentResponse, Modality } from "@google/genai";
 import type { GarmentCategory, LightingOption, SceneOption, SceneQualityMode, TopLengthOption, DressLengthOption, OuterwearLengthOption } from '../types';
+import { imageUrlToDataUrl } from '../lib/imagePersistence';
 
 const fileToPart = async (file: File) => {
     const dataUrl = await new Promise<string>((resolve, reject) => {
@@ -187,6 +188,41 @@ export const buildGarmentInstructions = (category: GarmentCategory, topLength?: 
     return 'Add the accessory naturally in the correct wearing position without altering the rest of the outfit. Preserve the clothing silhouette and place the accessory where it would realistically be worn or carried. Preserve the full-body framing from head to toe. Do not crop the model. Do not change the aspect ratio or camera distance.';
 };
 
+const buildBottomGarmentStructureRules = () => [
+    'This is a full lower-garment replacement, not a recolor or texture swap.',
+    'Remove all original lower-garment construction details from the base image.',
+    'Do not preserve any original pockets, front seam lines, pleats, creases, hems, waistband shape, rise, cut, or leg width from the base garment.',
+    'Rebuild the lower-body silhouette from the garment image only.',
+    'The final hem width, leg shape, seam placement, drape, and garment construction must match the garment image, not the original model image.',
+    'If the base image and garment image conflict, always follow the garment image for garment structure.',
+];
+
+export const buildVirtualTryOnPrompt = (
+    category: GarmentCategory,
+    topLength?: TopLengthOption | null,
+    dressLength?: DressLengthOption | null,
+    outerwearLength?: OuterwearLengthOption | null,
+) => {
+    const promptPayload = {
+        role: 'expert virtual try-on AI',
+        task: "Create a new photorealistic image where the person from the model image is wearing the clothing from the garment image.",
+        inputs: ['model image', 'garment image'],
+        category,
+        categorySpecificInstruction: buildGarmentInstructions(category, topLength, dressLength, outerwearLength),
+        structuralReplacementRules: category === 'bottom' ? buildBottomGarmentStructureRules() : undefined,
+        crucialRules: [
+            'Change only the area relevant to the garment category.',
+            "Preserve the person's face, hair, body shape, and pose from the model image.",
+            'Preserve the entire background from the model image.',
+            'Fit the garment naturally with realistic folds, shadows, and lighting consistent with the original scene.',
+            'Maintain the aspect ratio of the base image. Do not stretch or squash the garment or background.',
+            'Return only the final edited image.',
+        ],
+    };
+
+    return JSON.stringify(promptPayload, null, 2);
+};
+
 export const generateVirtualTryOnImage = async (
     modelImageUrl: string,
     garmentImage: File,
@@ -195,7 +231,8 @@ export const generateVirtualTryOnImage = async (
     dressLength?: DressLengthOption | null,
     outerwearLength?: OuterwearLengthOption | null,
 ): Promise<string> => {
-    const modelImagePart = dataUrlToPart(modelImageUrl);
+    const normalizedModelImageUrl = await imageUrlToDataUrl(modelImageUrl);
+    const modelImagePart = dataUrlToPart(normalizedModelImageUrl);
 
     const dataUrl = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
@@ -205,17 +242,7 @@ export const generateVirtualTryOnImage = async (
     });
     const garmentImagePart = dataUrlToPart(dataUrl);
 
-    const prompt = `You are an expert virtual try-on AI. You will be given a 'model image' and a 'garment image'. Your task is to create a new photorealistic image where the person from the 'model image' is wearing the clothing from the 'garment image'.
-
-Category-specific instruction: ${buildGarmentInstructions(category, topLength, dressLength, outerwearLength)}
-
-**Crucial Rules:**
-1.  Change only the area relevant to the garment category.
-2.  Preserve the person's face, hair, body shape, and pose from the 'model image'.
-3.  Preserve the entire background from the 'model image'.
-4.  Fit the garment naturally with realistic folds, shadows, and lighting consistent with the original scene.
-5.  Maintain the aspect ratio of the base image - do not stretch or squash the garment or background.
-6.  Return ONLY the final edited image.`;
+    const prompt = buildVirtualTryOnPrompt(category, topLength, dressLength, outerwearLength);
     const response = await ai.models.generateContent({
         model,
         contents: { parts: [modelImagePart, garmentImagePart, { text: prompt }] },
@@ -290,7 +317,8 @@ Critical rules:
 };
 
 export const generatePoseVariation = async (tryOnImageUrl: string, poseInstruction: string): Promise<string> => {
-    const tryOnImagePart = dataUrlToPart(tryOnImageUrl);
+    const normalizedTryOnImageUrl = await imageUrlToDataUrl(tryOnImageUrl);
+    const tryOnImagePart = dataUrlToPart(normalizedTryOnImageUrl);
     const prompt = `You are an expert fashion photographer AI. Take this image and regenerate it from a different perspective. The person, clothing, and background style must remain identical. The new perspective should be: "${poseInstruction}". Return ONLY the final image.`;
     const response = await ai.models.generateContent({
         model,
@@ -309,7 +337,8 @@ export const generateSceneVariation = async (
     mode: SceneQualityMode = 'fast',
     customPrompt?: string,
 ): Promise<string> => {
-    const baseImagePart = dataUrlToPart(baseImageUrl);
+    const normalizedBaseImageUrl = await imageUrlToDataUrl(baseImageUrl);
+    const baseImagePart = dataUrlToPart(normalizedBaseImageUrl);
     const prompt = buildScenePrompt(scene, lighting, mode, customPrompt);
     const response = await ai.models.generateContent({
         model: getSceneModelName(mode),

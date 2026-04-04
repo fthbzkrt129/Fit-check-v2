@@ -1,18 +1,36 @@
+---
+gsd_state_version: 1.0
+milestone: v1.0
+milestone_name: milestone
+status: ready_for_verification
+last_updated: "2026-04-03T01:00:06.281Z"
+last_activity: 2026-04-03
+progress:
+  total_phases: 7
+  completed_phases: 5
+  total_plans: 11
+  completed_plans: 9
+---
+
 ## Current Position
 
-Phase: Phase 3 — Undo/Redo ✅ (Tamamlandı)
-Plan: 3 aşama — En-Boy Oranı ✅, Oturum Kalıcılığı ✅, Undo/Redo ✅
-Status: Phase 1 ✅ tamamlandı, Phase 2 ✅ tamamlandı, Phase 3 ✅ tamamlandı (execute başarılı)
-Last activity: 2026-03-30 21:38 — Phase 3 Plan 01 execution completed (UndoRedoBar component + App.tsx integration)
+Phase: 05 (backend-guvenligi-api-key-izolasyonu-multi-tenant-saas-mimarisi-ve-postgresql-stratejisi) — COMPLETE
+Plan: Complete
+Status: Ready for verification
+Last activity: 2026-04-03
 
 ## Project Reference
 
-Bkz: .planning/PROJECT.md (güncellendi 2026-03-30)
+Bkz: .planning/PROJECT.md (güncellendi 2026-04-02)
 
 **Core value:** Kullanıcı gerçek kıyafetlerini fotoğraftaki modele koyup farklı kombinasyonları hızlıca görselleştirebilmeli.
-**Current focus:** Phase 2 — Session persistence ✅ tamamlandı, Undo/Redo enhancements (isteğe bağlı)
+**Current focus:** Phase 05 tamamlandi — verification bekleniyor
 
 ## Accumulated Context
+
+### Roadmap Evolution
+
+- Phase 5 added: Backend guvenligi, API key izolasyonu, multi-tenant SaaS mimarisi ve PostgreSQL stratejisi
 
 - Mevcut kod haritası: `.planning/codebase/` (7 doküman, 1063 satır)
 - `App.tsx` 715 satır (session persistence hooks eklendi)
@@ -24,6 +42,9 @@ Bkz: .planning/PROJECT.md (güncellendi 2026-03-30)
 - ✅ Regenerate butonu (yanlış render'ları yeniden üretmek için)
 - ✅ Undo/Redo temel altyapısı mevcut
 - ✅ Session Persistence: outfit history, wardrobe, pose index, scene variations restore on reload (SESS-01 → SESS-04)
+- ✅ fal.ai deneysel adapter: deterministic bundle prompt, bounded retry, normalized errors
+- ✅ Start screen dual-entry: standart ve deneysel styling akışları ayrıldı
+- ✅ Experimental staging UX: kategori bazlı stage, tek-shot submit, retry, duplicate-submit guard
 
 ## Completed Tasks
 
@@ -33,7 +54,12 @@ Bkz: .planning/PROJECT.md (güncellendi 2026-03-30)
 - Phase 3 Task 1: UndoRedoBar component ✅ (commit 3625271)
 - Phase 3 Task 2: App.tsx UndoRedoBar integration ✅ (commit 0c596f8)
 - Phase 3 SUMMARY.md created ✅ (commit 73f65eb)
+- Phase 4 Plan 1 Task 1: experimental bundle helper ✅ (commit da7ac60)
+- Phase 4 Plan 1 Task 2: fal.ai adapter ✅ (commit 478eb6c)
+- Phase 4 Plan 2 Task 1: start screen dual entry ✅ (commits e974e5b, bd29740)
+- Phase 4 Plan 2 Task 2: staged experimental flow ✅ (commits 7c6bd17, 25ba8fd)
+- Phase 4 summaries + verification created ✅
 
 ## Pending
 
-None — All phases complete!
+- Phase 5: backend-guvenligi-api-key-izolasyonu-multi-tenant-saas-mimarisi-ve-postgresql-stratejisi tamamlandi; local db dogrulamasi Docker ile tekrar kosulmali

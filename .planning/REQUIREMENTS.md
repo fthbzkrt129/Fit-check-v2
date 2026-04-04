@@ -30,6 +30,14 @@ Milat v1.0 — Temel İyileştirmeler.
 
 Bu milat kapsamı dışında, sonraki milatlara bırakılan gereksinimler.
 
+### Deneysel Kombin Giydirme
+
+- [x] **EXP-01**: Kullanıcı model oluşturduktan sonra `Deneysel kombin giydir` CTA'sını görebilir ve bu alternatif akışı seçebilir
+- [x] **EXP-02**: Kullanıcı aktif kombin parçalarını ve model görselini tek fal.ai isteğinde toplu olarak üretebilir
+- [x] **EXP-03**: Deneysel akış eklenirken mevcut Gemini step-by-step styling akışı bozulmaz
+- [x] **EXP-04**: fal.ai entegrasyonu için gerekli yapılandırma (`FAL_KEY`, servis kontratı, prompt builder) tanımlanır
+- [x] **EXP-05**: Deneysel akışın prompt/service/UI davranışı otomatik testlerle doğrulanır
+
 - **UNDO-04**: Kullanıcı kombin geçmişinde belirli bir adıma geri dönebilir (multi-step undo)
 - **RATIO-04**: Kullanıcı base görsel boyutlarını değiştirebilir (crop/resize)
 
@@ -58,12 +66,16 @@ Yol haritası oluşturulurken doldurulacak.
 | UNDO-01 | Phase 3 | Beklemede |
 | UNDO-02 | Phase 3 | Beklemede |
 | UNDO-03 | Phase 3 | Beklemede |
-
+| EXP-01 | Phase 4 | Tamamlandı |
+| EXP-02 | Phase 4 | Tamamlandı |
+| EXP-03 | Phase 4 | Tamamlandı |
+| EXP-04 | Phase 4 | Tamamlandı |
+| EXP-05 | Phase 4 | Tamamlandı |
 **Coverage:**
-- v1 gereksinimleri: 10 toplam
-- Haritalandırılmış: 10
+- v1 gereksinimleri: 15 toplam
+- Haritalandırılmış: 15
 - Haritalandırılmamış: 0 ✓
 
 ---
 *Gereksinimler tanımlandı: 2026-03-30*
-*Son güncelleme: 2026-03-30 — yol haritası oluşturuldu*
+*Son güncelleme: 2026-04-02 — Phase 4 deneysel kombin gereksinimleri eklendi*

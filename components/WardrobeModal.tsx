@@ -3,17 +3,19 @@
  * SPDX-License-Identifier: Apache-2.0
 */
 import React, { useState } from 'react';
-import type { GarmentCategory, WardrobeItem } from '../types';
+import type { ExperimentalGarmentSelection, GarmentCategory, StylingMode, WardrobeItem } from '../types';
 import { UploadCloudIcon, CheckCircleIcon, PinIcon } from './icons';
 import { formatWardrobeItemName } from '../lib/wardrobeItemName';
 
 interface WardrobePanelProps {
   onGarmentSelect: (garmentFile: File, garmentInfo: WardrobeItem) => void;
+  onStageGarment: (selection: ExperimentalGarmentSelection) => void;
   onPinItem: (item: WardrobeItem) => void;
   activeGarmentIds: string[];
   isLoading: boolean;
   wardrobe: WardrobeItem[];
   activeCategory: GarmentCategory;
+  selectionMode?: StylingMode;
 }
 
 // Helper to convert image URL to a File object using a canvas to bypass potential CORS issues.
@@ -53,6 +55,8 @@ const urlToFile = (url: string, filename: string): Promise<File> => {
 
 const categoryLabels: Record<GarmentCategory, string> = {
     top: 'Üst Giyim',
+    outerwear: 'Dış Giyim',
+    dress: 'Elbise',
     bottom: 'Alt Giyim',
     outerwear: 'Dış Giyim',
     dress: 'Elbise',
@@ -60,7 +64,16 @@ const categoryLabels: Record<GarmentCategory, string> = {
     accessory: 'Aksesuar',
 };
 
-const WardrobePanel: React.FC<WardrobePanelProps> = ({ onGarmentSelect, onPinItem, activeGarmentIds, isLoading, wardrobe, activeCategory }) => {
+const WardrobePanel: React.FC<WardrobePanelProps> = ({
+    onGarmentSelect,
+    onStageGarment,
+    onPinItem,
+    activeGarmentIds,
+    isLoading,
+    wardrobe,
+    activeCategory,
+    selectionMode = 'standard',
+}) => {
     const [error, setError] = useState<string | null>(null);
     const visibleWardrobe = wardrobe.filter((item) => !item.category || item.category === activeCategory);
 
@@ -71,6 +84,15 @@ const WardrobePanel: React.FC<WardrobePanelProps> = ({ onGarmentSelect, onPinIte
             // If the item was from an upload, its URL is a blob URL. We need to fetch it to create a file.
             // If it was a default item, it's a regular URL. This handles both.
             const file = await urlToFile(item.url, item.name);
+            if (selectionMode === 'experimental') {
+                onStageGarment({
+                    id: item.id,
+                    name: item.name,
+                    category: activeCategory,
+                    source: file,
+                });
+                return;
+            }
             onGarmentSelect(file, item);
         } catch (err) {
             const detailedError = `Failed to load wardrobe item. This is often a CORS issue. Check the developer console for details.`;
@@ -90,9 +112,19 @@ const WardrobePanel: React.FC<WardrobePanelProps> = ({ onGarmentSelect, onPinIte
                 id: `custom-${Date.now()}`,
                 name: formatWardrobeItemName(file.name),
                 url: URL.createObjectURL(file),
+                category: activeCategory,
                 source: 'user',
                 isPinned: false,
             };
+            if (selectionMode === 'experimental') {
+                onStageGarment({
+                    id: customGarmentInfo.id,
+                    name: customGarmentInfo.name,
+                    category: activeCategory,
+                    source: file,
+                });
+                return;
+            }
             onGarmentSelect(file, customGarmentInfo);
         }
     };

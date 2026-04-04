@@ -20,6 +20,11 @@ Kullanıcı gerçek kıyafetlerini fotoğraftaki modele koyup farklı kombinasyo
 - ✓ Kullanıcı poz değiştirebilir (4 poz) — mevcut
 - ✓ Kullanıcı sahne ve ışık varyasyonu oluşturabilir — mevcut
 - ✓ Kullanıcı dolabına parça sabitleyebilir — mevcut
+- ✓ Kullanıcı model üretiminden sonra `Deneysel kombin giydir` girişini görebilir — Phase 04
+- ✓ Kullanıcı deneysel akışta parçaları stage edip tek fal.ai isteğiyle kombin üretebilir — Phase 04
+- ✓ fal.ai bundle prompt/service contract deterministic ve retry-safe çalışır — Phase 04
+- ✓ Deneysel akış loading, retry ve duplicate-submit guard içerir — Phase 04
+- ✓ Deneysel prompt/service/UI davranışı testlerle doğrulandı — Phase 04
 
 ### Active
 
@@ -38,7 +43,7 @@ Kullanıcı gerçek kıyafetlerini fotoğraftaki modele koyup farklı kombinasyo
 
 ## Context
 
-- Tek ortam değişkeni: `GEMINI_API_KEY` (istemci tarafında, Vite define ile exposed)
+- Ortam değişkenleri: `GEMINI_API_KEY`, `FAL_KEY` (deneysel akış için)
 - Tüm görseller data URL olarak state'te tutulur (base64)
 - Tailwind CDN üzerinden yükleniyor (npm'den değil)
 - Karışık Türkçe/İngilizce arayüz metinleri
@@ -58,10 +63,15 @@ Kullanıcı gerçek kıyafetlerini fotoğraftaki modele koyup farklı kombinasyo
 | Oturum için sessionStorage/localStorage | Sunucu yok, auth yok — yerel depolama tek seçenek | — Beklemede |
 | Undo/redo için zustand veya useState | Mevcut yapı useState ile — ekleme mi, refactor mü? | — Beklemede |
 | En-boy oranı için canvas resize mi, padding mi? | Kalite kaybı vs boyut tutarlılığı | — Beklemede |
+| Deneysel kombin provider'ı | Kullanıcı bütçe tasarrufu için fal.ai istedi | fal.ai çoklu referans akışı planlanacak |
 
 ## Evolution
 
 Bu belge aşama geçişleri ve milat sınırlarında güncellenir.
+
+## Current State
+
+Phase 04 tamamlandı — standart Gemini styling akışı korunurken alternatif fal.ai bundled styling akışı eklendi.
 
 **Her aşama geçişinden sonra** (via `/gsd-transition`):
 1. Gereksinimler geçersizleşti mi? → Out of Scope'a taşı (sebebiyle)
@@ -77,4 +87,4 @@ Bu belge aşama geçişleri ve milat sınırlarında güncellenir.
 4. Context'i mevcut duruma göre güncelle
 
 ---
-*Son güncelleme: 2026-03-30 — Milat v1.0 başlatıldı*
+*Son güncelleme: 2026-04-02 — Phase 4 deneysel kombin akışı tamamlandı*

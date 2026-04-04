@@ -14,7 +14,8 @@ import CategoryStepPanel from './components/CategoryStepPanel';
 import ScenePanel from './components/ScenePanel';
 import SceneVariationList from './components/SceneVariationList';
 import { generateIdentityReferenceImage, generateModelSwapImage, generateSceneVariation, generateVirtualTryOnImage, generatePoseVariation } from './services/geminiService';
-import { GarmentCategory, DressLengthOption, OuterwearLengthOption, LightingOption, OutfitLayer, SceneOption, SceneQualityMode, SceneVariation, TopLengthOption, WardrobeItem } from './types';
+import { generateExperimentalOutfitImage } from './services/falService';
+import { ExperimentalGarmentSelection, GarmentCategory, DressLengthOption, OuterwearLengthOption, LightingOption, OutfitLayer, SceneOption, SceneQualityMode, SceneVariation, StylingMode, TopLengthOption, WardrobeItem } from './types';
 import { ChevronDownIcon, ChevronUpIcon, ChevronLeftIcon, ChevronRightIcon } from './components/icons';
 import { defaultWardrobe } from './wardrobe';
 import Footer from './components/Footer';
@@ -27,6 +28,7 @@ import { blobUrlToDataUrl } from './lib/imagePersistence';
 import { POSE_OPTIONS } from './lib/poseOptions';
 import { addPinnedWardrobeItem, getPinnedWardrobeItems } from './lib/pinnedWardrobe';
 import { saveSession, loadSession, clearSession } from './lib/sessionStorage';
+import { sanitizePersistedWardrobeItems } from './lib/wardrobePersistence';
 import type { SessionData } from './lib/sessionStorage';
 import { saveSessionState, restoreSessionState, clearSessionData } from './src/lib/sessionPersistence';
 import type { SessionState } from './src/lib/sessionPersistence';
@@ -42,9 +44,21 @@ const getPoseInstructionByIndex = (index: number) => POSE_INSTRUCTIONS[index];
 const getPoseLabelByIndex = (index: number) => POSE_LABELS[index];
 
 const useMediaQuery = (query: string): boolean => {
-  const [matches, setMatches] = useState(() => window.matchMedia(query).matches);
+  const getMatches = () => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return false;
+    }
+
+    return window.matchMedia(query).matches;
+  };
+
+  const [matches, setMatches] = useState(getMatches);
 
   useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return;
+    }
+
     const mediaQueryList = window.matchMedia(query);
     const listener = (event: MediaQueryListEvent) => setMatches(event.matches);
 
@@ -67,6 +81,7 @@ const useMediaQuery = (query: string): boolean => {
 
 
 const initialSession = loadSession();
+type ExperimentalSelectionMap = Partial<Record<GarmentCategory, ExperimentalGarmentSelection>>;
 
 const App: React.FC = () => {
   const [modelImageUrl, setModelImageUrl] = useState<string | null>(null);
@@ -78,7 +93,7 @@ const App: React.FC = () => {
   const [currentPoseIndex, setCurrentPoseIndex] = useState(initialSession?.currentPoseIndex ?? 0);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [wardrobe, setWardrobe] = useState<WardrobeItem[]>(() => {
-    const userItems = initialSession?.wardrobeUserItems ?? [];
+    const userItems = sanitizePersistedWardrobeItems(initialSession?.wardrobeUserItems ?? []);
     return [...defaultWardrobe, ...getPinnedWardrobeItems(), ...userItems.filter(i => i.source === 'user')];
   });
   const [activeCategory, setActiveCategory] = useState<GarmentCategory>(initialSession?.activeCategory ?? 'top');
@@ -91,6 +106,8 @@ const App: React.FC = () => {
   const [sceneVariations, setSceneVariations] = useState<SceneVariation[]>(initialSession?.sceneVariations ?? []);
   const [selectedSceneVariationId, setSelectedSceneVariationId] = useState<string | null>(null);
   const [customScenePrompt, setCustomScenePrompt] = useState<string | null>(null);
+  const [stylingMode, setStylingMode] = useState<StylingMode>('standard');
+  const [stagedExperimentalSelections, setStagedExperimentalSelections] = useState<ExperimentalSelectionMap>({});
   const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>('styling');
   const [pendingModelSwapFile, setPendingModelSwapFile] = useState<File | null>(null);
   const [pendingModelSwapPreviewUrl, setPendingModelSwapPreviewUrl] = useState<string | null>(null);
@@ -114,7 +131,7 @@ const App: React.FC = () => {
       }
       if (restoredSession.pinnedWardrobe && restoredSession.pinnedWardrobe.length > 0) {
         setWardrobe(prev => {
-          const userItems = restoredSession.pinnedWardrobe || [];
+          const userItems = sanitizePersistedWardrobeItems(restoredSession.pinnedWardrobe || []);
           return [...defaultWardrobe, ...getPinnedWardrobeItems(), ...userItems.filter(i => i.source === 'user')];
         });
       }
@@ -147,7 +164,7 @@ const App: React.FC = () => {
     }
 
     sessionSaveTimerRef.current = setTimeout(() => {
-      const userItems = wardrobe.filter((item) => item.source === 'user').map(item => ({
+      const userItems = sanitizePersistedWardrobeItems(wardrobe.filter((item) => item.source === 'user')).map(item => ({
         ...item,
         url: item.url.startsWith('data:image/') ? '[image-data]' : item.url,
       }));
@@ -187,10 +204,17 @@ const App: React.FC = () => {
     outfitHistory.slice(0, currentOutfitIndex + 1), 
     [outfitHistory, currentOutfitIndex]
   );
+
+  const stagedExperimentalGarments = useMemo(
+    () => Object.values(stagedExperimentalSelections).filter(Boolean) as ExperimentalGarmentSelection[],
+    [stagedExperimentalSelections],
+  );
   
   const activeGarmentIds = useMemo(() =>
-    activeOutfitLayers.map(layer => layer.garment?.id).filter(Boolean) as string[],
-    [activeOutfitLayers]
+    stylingMode === 'experimental'
+      ? stagedExperimentalGarments.map((selection) => selection.id)
+      : activeOutfitLayers.map(layer => layer.garment?.id).filter(Boolean) as string[],
+    [activeOutfitLayers, stagedExperimentalGarments, stylingMode]
   );
 
   const completedCategories = useMemo(() =>
@@ -237,7 +261,11 @@ const App: React.FC = () => {
     void downloadImage(displayImageUrl, `fit-check-${Date.now()}.png`);
   }, [displayImageUrl]);
 
-  const handleModelFinalized = (url: string, target: WorkspaceMode = 'styling') => {
+  const initializeStylingSession = (
+    url: string,
+    nextMode: StylingMode,
+    target: WorkspaceMode = 'styling'
+  ) => {
     setModelImageUrl(url);
     setWorkspaceMode(target);
     setOutfitHistory([{
@@ -253,8 +281,20 @@ const App: React.FC = () => {
     setSelectedLighting(null);
     setSceneVariations([]);
     setSelectedSceneVariationId(null);
+    setStylingMode(nextMode);
+    setStagedExperimentalSelections({});
+    setError(null);
+    setLoadingMessage('');
     setPendingModelSwapFile(null);
     setPendingModelSwapPreviewUrl(null);
+  };
+
+  const handleModelFinalized = (url: string, target: WorkspaceMode = 'styling') => {
+    initializeStylingSession(url, 'standard', target);
+  };
+
+  const handleExperimentalStyling = (url: string) => {
+    initializeStylingSession(url, 'experimental', 'styling');
   };
 
   const handleStartOver = () => {
@@ -275,10 +315,20 @@ const App: React.FC = () => {
     setSelectedLighting(null);
     setSceneVariations([]);
     setSelectedSceneVariationId(null);
+    setStylingMode('standard');
+    setStagedExperimentalSelections({});
     setWorkspaceMode('styling');
     setPendingModelSwapFile(null);
     setPendingModelSwapPreviewUrl(null);
   };
+
+  const handleStageGarment = useCallback((selection: ExperimentalGarmentSelection) => {
+    setError(null);
+    setStagedExperimentalSelections((previous) => ({
+      ...previous,
+      [selection.category]: selection,
+    }));
+  }, []);
 
   const handleSelectModelSwapFile = useCallback((file: File) => {
     setPendingModelSwapFile(file);
@@ -336,7 +386,6 @@ const App: React.FC = () => {
       setLoadingMessage('');
     }
   }, [pendingModelSwapFile, isLoading, outfitHistory, currentOutfitIndex, modelImageUrl]);
-
   const handleGarmentSelect = useCallback(async (garmentFile: File, garmentInfo: WardrobeItem) => {
     if (!displayImageUrl || isLoading) return;
     if (activeCategory === 'top' && !selectedTopLength) {
@@ -479,6 +528,56 @@ const App: React.FC = () => {
       setLoadingMessage('');
     }
   }, [isLoading, outfitHistory, currentOutfitIndex, currentPoseIndex, displayImageUrl]);
+
+  const handleExperimentalGenerate = useCallback(async () => {
+    if (!modelImageUrl || isLoading || stagedExperimentalGarments.length === 0) {
+      return;
+    }
+
+    setError(null);
+    setIsLoading(true);
+    setLoadingMessage('Deneysel kombin hazırlanıyor...');
+
+    try {
+      const generatedImageUrl = await generateExperimentalOutfitImage({
+        baseModelImage: modelImageUrl,
+        garmentSelections: stagedExperimentalGarments,
+        onStatusUpdate: (message) => setLoadingMessage(message || 'Deneysel kombin hazırlanıyor...'),
+      });
+
+      const lastSelection = stagedExperimentalGarments[stagedExperimentalGarments.length - 1];
+      const poseInstruction = getPoseInstructionByIndex(0);
+      const layerName = stagedExperimentalGarments.map((selection) => selection.name).join(', ');
+
+      const bundleLayer: OutfitLayer = {
+        garment: {
+          id: `experimental-bundle-${Date.now()}`,
+          name: `Experimental bundle: ${layerName}`,
+          url: generatedImageUrl,
+          category: lastSelection.category,
+          source: 'user',
+        },
+        poseImages: { [poseInstruction]: generatedImageUrl },
+        category: lastSelection.category,
+      };
+
+      setOutfitHistory((prevHistory) => {
+        const nextHistory = prevHistory.slice(0, currentOutfitIndex + 1);
+        return [...nextHistory, bundleLayer];
+      });
+      setCurrentOutfitIndex((prev) => prev + 1);
+      setCurrentPoseIndex(0);
+      setSelectedSceneVariationId(null);
+      setActiveCategory(getNextCategory(lastSelection.category));
+      setStylingMode('experimental');
+    } catch (err) {
+      console.error(err);
+      setError('Deneysel kombin üretilemedi.');
+    } finally {
+      setIsLoading(false);
+      setLoadingMessage('');
+    }
+  }, [currentOutfitIndex, isLoading, modelImageUrl, stagedExperimentalGarments]);
 
   const handlePinWardrobeItem = useCallback(async (item: WardrobeItem) => {
     if (item.source !== 'user' || item.isPinned) {
@@ -632,7 +731,7 @@ const App: React.FC = () => {
             exit="exit"
             transition={{ duration: 0.5, ease: 'easeInOut' }}
           >
-            <StartScreen onModelFinalized={handleModelFinalized} />
+            <StartScreen onModelFinalized={handleModelFinalized} onExperimentalStyling={handleExperimentalStyling} />
           </motion.div>
         ) : (
           <motion.div
@@ -733,7 +832,7 @@ const App: React.FC = () => {
                       outfitHistory={activeOutfitLayers}
                       onRemoveLastGarment={handleUndo}
                     />
-                    <CategoryStepPanel
+                     <CategoryStepPanel
                       activeCategory={activeCategory}
                       completedCategories={completedCategories}
                       selectedTopLength={selectedTopLength}
@@ -752,9 +851,66 @@ const App: React.FC = () => {
                         setSelectedOuterwearLength(length);
                         setError(null);
                       }}
-                      isLoading={isLoading}
-                    />
-                    <ScenePanel
+                       isLoading={isLoading}
+                     />
+                     {stylingMode === 'experimental' && (
+                       <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 text-sm text-emerald-900">
+                         <div className="flex items-start justify-between gap-3">
+                           <div>
+                             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">Deneysel mod</p>
+                             <p className="mt-2 font-semibold">{stagedExperimentalGarments.length > 0 ? `${stagedExperimentalGarments.length} parça hazır` : 'Henüz parça seçilmedi'}</p>
+                             <p className="mt-1 text-emerald-800">Parçaları sahnele, sonra tek seferde fal.ai isteği gönder.</p>
+                           </div>
+                           <button
+                             type="button"
+                             onClick={() => setStylingMode('standard')}
+                             className="rounded-full border border-emerald-300 px-3 py-1 text-xs font-semibold text-emerald-800 transition hover:bg-white"
+                           >
+                             Standart moda dön
+                           </button>
+                         </div>
+
+                         {stagedExperimentalGarments.length > 0 && (
+                           <ul className="mt-3 space-y-2 text-emerald-900">
+                             {stagedExperimentalGarments.map((selection) => (
+                               <li key={selection.category} className="flex items-center justify-between rounded-xl bg-white/80 px-3 py-2">
+                                 <span className="font-medium">{selection.name}</span>
+                                 <span className="text-xs uppercase tracking-[0.15em] text-emerald-700">{selection.category}</span>
+                               </li>
+                             ))}
+                           </ul>
+                         )}
+
+                         <div className="mt-4 flex flex-col gap-3">
+                           {isLoading && loadingMessage && (
+                             <p className="rounded-xl bg-white/80 px-3 py-2 text-sm font-medium text-emerald-900">
+                               {loadingMessage}
+                             </p>
+                           )}
+                           <button
+                             type="button"
+                             onClick={() => void handleExperimentalGenerate()}
+                             disabled={isLoading || stagedExperimentalGarments.length === 0}
+                             className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-3 font-semibold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:bg-emerald-300"
+                           >
+                             Deneysel kombini üret
+                           </button>
+                           {error && (
+                             <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-red-700">
+                               <p>{error}</p>
+                               <button
+                                 type="button"
+                                 onClick={() => void handleExperimentalGenerate()}
+                                 className="mt-2 text-sm font-semibold text-red-700 underline"
+                               >
+                                 Tekrar dene
+                               </button>
+                             </div>
+                           )}
+                         </div>
+                       </div>
+                     )}
+                     <ScenePanel
                       selectedScene={selectedScene}
                       selectedLighting={selectedLighting}
                       qualityMode={sceneQualityMode}
@@ -773,14 +929,16 @@ const App: React.FC = () => {
                       onSelectVariation={setSelectedSceneVariationId}
                       isLoading={isLoading}
                     />
-                    <WardrobePanel
-                      onGarmentSelect={handleGarmentSelect}
-                      onPinItem={handlePinWardrobeItem}
-                      activeGarmentIds={activeGarmentIds}
-                      isLoading={isLoading}
-                      wardrobe={wardrobe}
-                      activeCategory={activeCategory}
-                    />
+                     <WardrobePanel
+                       onGarmentSelect={handleGarmentSelect}
+                       onStageGarment={handleStageGarment}
+                       onPinItem={handlePinWardrobeItem}
+                       activeGarmentIds={activeGarmentIds}
+                       isLoading={isLoading}
+                       wardrobe={wardrobe}
+                       activeCategory={activeCategory}
+                       selectionMode={stylingMode}
+                     />
                   </div>
               </aside>
             </main>

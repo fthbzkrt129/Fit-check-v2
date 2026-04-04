@@ -14,10 +14,11 @@ import heroImage from '../assets/ana.png';
 import editedHeroImage from '../assets/düzenlenmiş.png';
 
 interface StartScreenProps {
+  onExperimentalStyling: (modelUrl: string) => void;
   onModelFinalized: (modelUrl: string, target?: 'styling' | 'modelSwap') => void;
 }
 
-const StartScreen: React.FC<StartScreenProps> = ({ onModelFinalized }) => {
+const StartScreen: React.FC<StartScreenProps> = ({ onModelFinalized, onExperimentalStyling }) => {
   const [userImageUrl, setUserImageUrl] = useState<string | null>(null);
   const [generatedModelUrl, setGeneratedModelUrl] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -165,6 +166,12 @@ const StartScreen: React.FC<StartScreenProps> = ({ onModelFinalized }) => {
                     className="w-full sm:w-auto relative inline-flex items-center justify-center px-8 py-3 text-base font-semibold text-white bg-gray-900 rounded-md cursor-pointer group hover:bg-gray-700 transition-colors"
                   >
                     Proceed to Styling &rarr;
+                  </button>
+                  <button
+                    onClick={() => onExperimentalStyling(generatedModelUrl)}
+                    className="w-full sm:w-auto relative inline-flex items-center justify-center px-8 py-3 text-base font-semibold text-gray-900 bg-white border border-gray-300 rounded-md cursor-pointer group hover:bg-gray-100 transition-colors"
+                  >
+                    Deneysel kombin giydir
                   </button>
                   <button
                     onClick={() => onModelFinalized(generatedModelUrl, 'modelSwap')}
