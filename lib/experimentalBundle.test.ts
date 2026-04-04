@@ -51,12 +51,14 @@ describe('experimentalBundle', () => {
     ]);
   });
 
-  it('builds a deterministic prompt that references image ordering and the final scene', () => {
+  it('builds a balanced try-on prompt that preserves the model anchor and garment fidelity', () => {
     const prompt = buildExperimentalBundlePrompt(selections, 'editorial rooftop at sunset');
 
-    expect(prompt).toContain('image 1');
-    expect(prompt).toContain('Take the element from image 2');
-    expect(prompt).toContain('Take the element from image 3');
+    expect(prompt).toContain('Image 1 is the base model photo');
+    expect(prompt).toContain('Use image 2 (Cream Blazer) as the exact top garment reference');
+    expect(prompt).toContain('Use image 3 (Brown Boots) as the exact footwear garment reference');
+    expect(prompt).toContain('Preserve the garment color, fabric appearance, silhouette, proportions, pattern, and visible design details');
+    expect(prompt).toContain('Remove or replace any conflicting clothing already visible on the model');
     expect(prompt).toContain('editorial rooftop at sunset');
   });
 

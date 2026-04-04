@@ -6,8 +6,14 @@ export const blobToDataUrl = (blob: Blob): Promise<string> =>
     reader.readAsDataURL(blob);
   });
 
-export const blobUrlToDataUrl = async (blobUrl: string): Promise<string> => {
-  const response = await fetch(blobUrl);
+export const imageUrlToDataUrl = async (imageUrl: string): Promise<string> => {
+  if (imageUrl.startsWith('data:image/')) {
+    return imageUrl;
+  }
+
+  const response = await fetch(imageUrl);
   const blob = await response.blob();
   return blobToDataUrl(blob);
 };
+
+export const blobUrlToDataUrl = imageUrlToDataUrl;

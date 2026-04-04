@@ -1,0 +1,11 @@
+- main [ref=e2]:
+  - generic [ref=e4]:
+    - generic [ref=e5]: Login
+    - heading "Workspace girisi" [level=1] [ref=e6]
+    - paragraph [ref=e7]: Supabase Auth oturumu server-side cookie akisi ile root domain uzerinden baslatilir.
+    - generic [ref=e8]:
+      - generic [ref=e9]:
+        - generic [ref=e10]: E-posta
+        - textbox "E-posta" [ref=e11]:
+          - /placeholder: you@company.com
+      - button "Magic link gonder" [ref=e12]

@@ -90,9 +90,9 @@
 
 Plans:
 - [x] 05-backend-guvenligi-api-key-izolasyonu-multi-tenant-saas-mimarisi-ve-postgresql-stratejisi-01-PLAN.md — Scaffold the new `apps/web` SaaS app foundation and env contract
-- [ ] 05-backend-guvenligi-api-key-izolasyonu-multi-tenant-saas-mimarisi-ve-postgresql-stratejisi-02-PLAN.md — Add Supabase SSR auth and subdomain tenant routing shell
-- [ ] 05-backend-guvenligi-api-key-izolasyonu-multi-tenant-saas-mimarisi-ve-postgresql-stratejisi-03-PLAN.md — Create tenant schema, RLS, and first-login workspace bootstrap
-- [ ] 05-backend-guvenligi-api-key-izolasyonu-multi-tenant-saas-mimarisi-ve-postgresql-stratejisi-04-PLAN.md — Move AI providers behind tenant-aware server routes
+- [x] 05-backend-guvenligi-api-key-izolasyonu-multi-tenant-saas-mimarisi-ve-postgresql-stratejisi-02-PLAN.md — Add Supabase SSR auth and subdomain tenant routing shell
+- [x] 05-backend-guvenligi-api-key-izolasyonu-multi-tenant-saas-mimarisi-ve-postgresql-stratejisi-03-PLAN.md — Create tenant schema, RLS, and first-login workspace bootstrap
+- [x] 05-backend-guvenligi-api-key-izolasyonu-multi-tenant-saas-mimarisi-ve-postgresql-stratejisi-04-PLAN.md — Move AI providers behind tenant-aware server routes
 
 ---
 

@@ -107,7 +107,7 @@ describe('falService', () => {
   });
 
   it('resolves the fal model from env with a wan default', () => {
-    expect(getExperimentalFalModel()).toBe('wan/v2.6/image-to-image');
+    expect(getExperimentalFalModel()).toBe('fal-ai/wan/v2.7/edit');
 
     process.env.VITE_FAL_EXPERIMENTAL_MODEL = 'fal-ai/custom-model';
 
@@ -125,15 +125,18 @@ describe('falService', () => {
     expect(mockConfig).toHaveBeenCalledWith({ credentials: 'fal-test-key' });
     expect(mockUpload).toHaveBeenCalledTimes(2);
     expect(mockTransformInput).toHaveBeenCalledWith({
-      prompt: expect.stringContaining('Take the element from image 2'),
+      prompt: expect.stringContaining('Use image 2 (Cream Blazer) as the exact top garment reference'),
       image_urls: [
         'https://example.com/model.png',
         'https://files.example.com/top.png',
         'https://files.example.com/blob-upload.png',
       ],
+      num_images: 1,
+      output_format: 'png',
+      enable_prompt_expansion: false,
     });
     expect(mockSubmit).toHaveBeenCalledTimes(1);
-    expect(mockSubmit).toHaveBeenCalledWith('wan/v2.6/image-to-image', {
+    expect(mockSubmit).toHaveBeenCalledWith('fal-ai/wan/v2.7/edit', {
       input: {
         prompt: expect.stringContaining('editorial rooftop at sunset'),
         image_urls: [
@@ -141,9 +144,12 @@ describe('falService', () => {
           'https://files.example.com/top.png',
           'https://files.example.com/blob-upload.png',
         ],
+        num_images: 1,
+        output_format: 'png',
+        enable_prompt_expansion: false,
       },
     });
-    expect(statusUpdates).toContain('fal.ai request is in progress...');
+    expect(statusUpdates).toContain('Kombin olusturuluyor...');
   });
 
   it('retries retryable fal errors once before succeeding', async () => {
@@ -180,7 +186,7 @@ describe('falService', () => {
     mockIsRetryableError.mockReturnValue(false);
 
     await expect(generateExperimentalOutfitImage(request)).rejects.toThrow(
-      'fal.ai deneysel kombin isteği şu anda tamamlanamadı. Lütfen tekrar deneyin.',
+      'fal.ai deneysel kombin isteği şu anda tamamlanamadı.',
     );
     expect(mockSubmit).toHaveBeenCalledTimes(1);
   });

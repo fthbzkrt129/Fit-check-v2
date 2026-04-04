@@ -3,7 +3,7 @@ import { ApiError, ValidationError, fal, isRetryableError } from '@fal-ai/client
 import { buildExperimentalBundleInput } from '../lib/experimentalBundle';
 import type { ExperimentalGarmentSelection, ExperimentalImageSource } from '../types';
 
-const DEFAULT_EXPERIMENTAL_FAL_MODEL = 'wan/v2.6/image-to-image';
+const DEFAULT_EXPERIMENTAL_FAL_MODEL = 'fal-ai/wan/v2.7/edit';
 const MAX_ATTEMPTS = 2;
 const RETRYABLE_STATUS_CODES = [408, 409, 425, 429, 500, 502, 503, 504];
 
@@ -51,13 +51,13 @@ const uploadImageSource = async (source: ExperimentalImageSource) => {
 const getStatusMessage = (status?: string) => {
   switch (status) {
     case 'IN_QUEUE':
-      return 'fal.ai request sırada...';
+      return 'Kombin siraya alindi...';
     case 'IN_PROGRESS':
-      return 'fal.ai request is in progress...';
+      return 'Kombin olusturuluyor...';
     case 'COMPLETED':
-      return 'fal.ai request tamamlandı.';
+      return 'Son goruntu hazirlaniyor...';
     default:
-      return 'fal.ai request işleniyor...';
+      return 'Kombin isleniyor...';
   }
 };
 
@@ -93,7 +93,11 @@ const normalizeFalError = (error: unknown): Error => {
       return new Error('fal.ai kimlik doğrulaması başarısız. FAL_KEY ayarını kontrol edin.');
     }
 
-    return new Error('fal.ai deneysel kombin isteği şu anda tamamlanamadı. Lütfen tekrar deneyin.');
+    const apiDetail = typeof error.body === 'string'
+      ? error.body
+      : JSON.stringify(error.body ?? {}).slice(0, 300);
+
+    return new Error(`fal.ai deneysel kombin isteği şu anda tamamlanamadı. ${apiDetail || 'Lutfen tekrar deneyin.'}`);
   }
 
   if (error instanceof Error) {
@@ -114,6 +118,9 @@ const buildFalRequestInput = async (request: ExperimentalGenerationRequest) => {
   const rawInput = {
     prompt: bundle.prompt,
     image_urls: uploadedImages,
+    num_images: 1,
+    output_format: 'png',
+    enable_prompt_expansion: false,
   };
 
   return await fal.storage.transformInput(rawInput);
@@ -124,7 +131,7 @@ const executeFalRequest = async (request: ExperimentalGenerationRequest) => {
   const input = await buildFalRequestInput(request);
   const submitted = await fal.queue.submit(endpoint, { input });
 
-  request.onStatusUpdate?.('fal.ai request gönderildi.');
+  request.onStatusUpdate?.('Kombin olusturma baslatildi...');
 
   await fal.queue.subscribeToStatus(endpoint, {
     requestId: submitted.request_id,

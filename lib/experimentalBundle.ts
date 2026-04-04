@@ -33,19 +33,21 @@ export const buildExperimentalBundlePrompt = (
   const orderedSelections = ensureBundleSelections(garmentSelections);
   const garmentInstructions = orderedSelections.map((selection, index) => {
     const imageIndex = index + 2;
-    return `Take the element from image ${imageIndex} (${selection.name}) and place it on image 1 with a realistic ${selection.category} fit.`;
+    return `Use image ${imageIndex} (${selection.name}) as the exact ${selection.category} garment reference and apply it naturally to the person in image 1.`;
   });
 
   const sceneLine = finalSceneDescription?.trim()
-    ? `Final scene direction: ${finalSceneDescription.trim()}.`
-    : 'Final scene direction: preserve the existing base-model scene from image 1.';
+    ? `Scene direction: ${finalSceneDescription.trim()}.`
+    : 'Scene direction: preserve the original background and composition from image 1.';
 
   return [
-    'You are editing one outfit image bundle.',
-    'Image 1 is always the base model and scene anchor.',
+    'Create one realistic try-on result using the provided image set.',
+    'Image 1 is the base model photo and must remain the identity, pose, body proportions, camera framing, and scene anchor.',
     ...garmentInstructions,
     sceneLine,
-    'Keep the same person identity, body proportions, camera framing, and photorealistic quality.',
+    'Preserve the garment color, fabric appearance, silhouette, proportions, pattern, and visible design details from each garment reference as closely as possible.',
+    'Remove or replace any conflicting clothing already visible on the model so the final result shows one coherent outfit.',
+    'Keep the result photorealistic, clean, and believable as a real try-on image.',
     'Return one final image only.',
   ].join(' ');
 };

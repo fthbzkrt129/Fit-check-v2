@@ -27,6 +27,7 @@ import { blobUrlToDataUrl } from './lib/imagePersistence';
 import { POSE_OPTIONS } from './lib/poseOptions';
 import { addPinnedWardrobeItem, getPinnedWardrobeItems } from './lib/pinnedWardrobe';
 import { saveSession, loadSession, clearSession } from './lib/sessionStorage';
+import { sanitizePersistedWardrobeItems } from './lib/wardrobePersistence';
 import type { SessionData } from './lib/sessionStorage';
 import { saveSessionState, restoreSessionState, clearSessionData } from './src/lib/sessionPersistence';
 import type { SessionState } from './src/lib/sessionPersistence';
@@ -88,7 +89,7 @@ const App: React.FC = () => {
   const [currentPoseIndex, setCurrentPoseIndex] = useState(initialSession?.currentPoseIndex ?? 0);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [wardrobe, setWardrobe] = useState<WardrobeItem[]>(() => {
-    const userItems = initialSession?.wardrobeUserItems ?? [];
+    const userItems = sanitizePersistedWardrobeItems(initialSession?.wardrobeUserItems ?? []);
     return [...defaultWardrobe, ...getPinnedWardrobeItems(), ...userItems.filter(i => i.source === 'user')];
   });
   const [activeCategory, setActiveCategory] = useState<GarmentCategory>(initialSession?.activeCategory ?? 'top');
@@ -123,7 +124,7 @@ const App: React.FC = () => {
       }
       if (restoredSession.pinnedWardrobe && restoredSession.pinnedWardrobe.length > 0) {
         setWardrobe(prev => {
-          const userItems = restoredSession.pinnedWardrobe || [];
+          const userItems = sanitizePersistedWardrobeItems(restoredSession.pinnedWardrobe || []);
           return [...defaultWardrobe, ...getPinnedWardrobeItems(), ...userItems.filter(i => i.source === 'user')];
         });
       }
@@ -156,7 +157,7 @@ const App: React.FC = () => {
     }
 
     sessionSaveTimerRef.current = setTimeout(() => {
-      const userItems = wardrobe.filter((item) => item.source === 'user').map(item => ({
+      const userItems = sanitizePersistedWardrobeItems(wardrobe.filter((item) => item.source === 'user')).map(item => ({
         ...item,
         url: item.url.startsWith('data:image/') ? '[image-data]' : item.url,
       }));

@@ -1,12 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { blobUrlToDataUrl } from './imagePersistence';
+import { imageUrlToDataUrl } from './imagePersistence';
 
-describe('blobUrlToDataUrl', () => {
+describe('imageUrlToDataUrl', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
   });
 
-  it('converts a blob url into a data url', async () => {
+  it('returns a data url unchanged', async () => {
+    const dataUrl = 'data:image/png;base64,already-inline';
+
+    await expect(imageUrlToDataUrl(dataUrl)).resolves.toBe(dataUrl);
+  });
+
+  it('converts a remote or blob url into a data url', async () => {
     const blob = new Blob(['image-bytes'], { type: 'image/png' });
     vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       blob: async () => blob,
@@ -25,6 +31,6 @@ describe('blobUrlToDataUrl', () => {
 
     vi.stubGlobal('FileReader', MockFileReader);
 
-    await expect(blobUrlToDataUrl('blob:http://localhost/example')).resolves.toBe('data:image/png;base64,converted-image');
+    await expect(imageUrlToDataUrl('https://example.com/look.png')).resolves.toBe('data:image/png;base64,converted-image');
   });
 });
