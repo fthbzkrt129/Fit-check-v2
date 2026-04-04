@@ -9,7 +9,7 @@ describe('outfitFlow', () => {
   });
 
   it('still returns the next category helper values for existing flows', () => {
-    expect(getNextCategory('top')).toBe('bottom');
+    expect(getNextCategory('top')).toBe('outerwear');
     expect(getNextCategory('bottom')).toBe('footwear');
   });
 

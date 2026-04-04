@@ -13,7 +13,7 @@ import OutfitStack from './components/OutfitStack';
 import CategoryStepPanel from './components/CategoryStepPanel';
 import ScenePanel from './components/ScenePanel';
 import SceneVariationList from './components/SceneVariationList';
-import { generateSceneVariation, generateVirtualTryOnImage, generatePoseVariation } from './services/geminiService';
+import { generateIdentityReferenceImage, generateModelSwapImage, generateSceneVariation, generateVirtualTryOnImage, generatePoseVariation } from './services/geminiService';
 import { generateExperimentalOutfitImage } from './services/falService';
 import { ExperimentalGarmentSelection, GarmentCategory, DressLengthOption, OuterwearLengthOption, LightingOption, OutfitLayer, SceneOption, SceneQualityMode, SceneVariation, StylingMode, TopLengthOption, WardrobeItem } from './types';
 import { ChevronDownIcon, ChevronUpIcon, ChevronLeftIcon, ChevronRightIcon } from './components/icons';
@@ -22,6 +22,7 @@ import Footer from './components/Footer';
 import { getFriendlyErrorMessage } from './lib/utils';
 import { CATEGORY_LABELS, getNextCategory, isCategorySelectionAllowed } from './lib/outfitFlow';
 import { addSceneVariationWithLimit, getPoseGenerationBaseImage, getSceneGenerationBaseImage } from './lib/sceneVariations';
+import { getModelSwapReferenceImage } from './lib/modelSwap';
 import { downloadImage } from './lib/downloadImage';
 import { blobUrlToDataUrl } from './lib/imagePersistence';
 import { POSE_OPTIONS } from './lib/poseOptions';
@@ -32,6 +33,9 @@ import type { SessionData } from './lib/sessionStorage';
 import { saveSessionState, restoreSessionState, clearSessionData } from './src/lib/sessionPersistence';
 import type { SessionState } from './src/lib/sessionPersistence';
 import Spinner from './components/Spinner';
+import ModelSwapPanel from './components/ModelSwapPanel';
+
+type WorkspaceMode = 'styling' | 'modelSwap';
 
 const POSE_INSTRUCTIONS = POSE_OPTIONS.map((pose) => pose.instruction);
 const POSE_LABELS = POSE_OPTIONS.map((pose) => pose.label);
@@ -104,6 +108,9 @@ const App: React.FC = () => {
   const [customScenePrompt, setCustomScenePrompt] = useState<string | null>(null);
   const [stylingMode, setStylingMode] = useState<StylingMode>('standard');
   const [stagedExperimentalSelections, setStagedExperimentalSelections] = useState<ExperimentalSelectionMap>({});
+  const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>('styling');
+  const [pendingModelSwapFile, setPendingModelSwapFile] = useState<File | null>(null);
+  const [pendingModelSwapPreviewUrl, setPendingModelSwapPreviewUrl] = useState<string | null>(null);
   const sessionSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMobile = useMediaQuery('(max-width: 767px)');
 
@@ -254,8 +261,13 @@ const App: React.FC = () => {
     void downloadImage(displayImageUrl, `fit-check-${Date.now()}.png`);
   }, [displayImageUrl]);
 
-  const initializeStylingSession = (url: string, nextMode: StylingMode) => {
+  const initializeStylingSession = (
+    url: string,
+    nextMode: StylingMode,
+    target: WorkspaceMode = 'styling'
+  ) => {
     setModelImageUrl(url);
+    setWorkspaceMode(target);
     setOutfitHistory([{
       garment: null,
       category: 'base',
@@ -273,14 +285,16 @@ const App: React.FC = () => {
     setStagedExperimentalSelections({});
     setError(null);
     setLoadingMessage('');
+    setPendingModelSwapFile(null);
+    setPendingModelSwapPreviewUrl(null);
   };
 
-  const handleModelFinalized = (url: string) => {
-    initializeStylingSession(url, 'standard');
+  const handleModelFinalized = (url: string, target: WorkspaceMode = 'styling') => {
+    initializeStylingSession(url, 'standard', target);
   };
 
   const handleExperimentalStyling = (url: string) => {
-    initializeStylingSession(url, 'experimental');
+    initializeStylingSession(url, 'experimental', 'styling');
   };
 
   const handleStartOver = () => {
@@ -303,6 +317,9 @@ const App: React.FC = () => {
     setSelectedSceneVariationId(null);
     setStylingMode('standard');
     setStagedExperimentalSelections({});
+    setWorkspaceMode('styling');
+    setPendingModelSwapFile(null);
+    setPendingModelSwapPreviewUrl(null);
   };
 
   const handleStageGarment = useCallback((selection: ExperimentalGarmentSelection) => {
@@ -313,6 +330,62 @@ const App: React.FC = () => {
     }));
   }, []);
 
+  const handleSelectModelSwapFile = useCallback((file: File) => {
+    setPendingModelSwapFile(file);
+    setPendingModelSwapPreviewUrl(URL.createObjectURL(file));
+    setError(null);
+  }, []);
+
+  const handleApplyModelSwap = useCallback(async () => {
+    if (!pendingModelSwapFile || isLoading) return;
+
+    const currentLayer = outfitHistory[currentOutfitIndex];
+    const referenceLookImageUrl = getModelSwapReferenceImage(currentLayer) ?? modelImageUrl;
+    if (!referenceLookImageUrl) return;
+
+    setError(null);
+    setIsLoading(true);
+    setLoadingMessage('Yeni manken referansi hazirlaniyor...');
+
+    try {
+      const identityReferenceImageUrl = await generateIdentityReferenceImage(pendingModelSwapFile);
+      setLoadingMessage('Yeni manken kombine uygulanıyor...');
+      const swappedImageUrl = await generateModelSwapImage(referenceLookImageUrl, identityReferenceImageUrl);
+
+      console.info('Model swap completed', {
+        referenceLookLength: referenceLookImageUrl.length,
+        identityReferenceLength: identityReferenceImageUrl.length,
+        swappedImageLength: swappedImageUrl.length,
+        identicalToReference: swappedImageUrl === referenceLookImageUrl,
+      });
+
+      setModelImageUrl(swappedImageUrl);
+      setOutfitHistory([{
+        garment: null,
+        category: 'base',
+        baseSourceImageUrl: swappedImageUrl,
+        poseImages: { [POSE_INSTRUCTIONS[0]]: swappedImageUrl },
+      }]);
+      setCurrentOutfitIndex(0);
+      setCurrentPoseIndex(0);
+      setSelectedScene(null);
+      setSelectedLighting(null);
+      setSceneVariations([]);
+      setSelectedSceneVariationId(null);
+      setPendingModelSwapFile(null);
+      setPendingModelSwapPreviewUrl(null);
+      setWorkspaceMode('styling');
+      setActiveCategory('top');
+      setSelectedTopLength(null);
+      setSelectedDressLength(null);
+      setSelectedOuterwearLength(null);
+    } catch (err) {
+      setError(getFriendlyErrorMessage(err, 'Yeni manken uygulanamadı'));
+    } finally {
+      setIsLoading(false);
+      setLoadingMessage('');
+    }
+  }, [pendingModelSwapFile, isLoading, outfitHistory, currentOutfitIndex, modelImageUrl]);
   const handleGarmentSelect = useCallback(async (garmentFile: File, garmentInfo: WardrobeItem) => {
     if (!displayImageUrl || isLoading) return;
     if (activeCategory === 'top' && !selectedTopLength) {
@@ -587,8 +660,14 @@ const App: React.FC = () => {
 
   const handleSelectCustomScene = useCallback((customPrompt: string) => {
     setError(null);
-    setSelectedScene('studio'); // Set scene to a default value
+    setSelectedScene(null);
     setCustomScenePrompt(customPrompt);
+  }, []);
+
+  const handleSelectScene = useCallback((scene: SceneOption) => {
+    setError(null);
+    setSelectedScene(scene);
+    setCustomScenePrompt(null);
   }, []);
 
   const handleGenerateScene = useCallback(async () => {
@@ -666,12 +745,13 @@ const App: React.FC = () => {
           >
             <main className="flex-grow relative flex flex-col md:flex-row overflow-hidden">
               <div className="w-full h-full flex-grow flex flex-col items-center justify-center bg-white pb-16 relative">
-                <div className="absolute top-6 left-6 z-30">
+                <div className="fixed inset-x-4 bottom-4 z-30 md:hidden">
                   <UndoRedoBar
                     canUndo={canUndo}
                     canRedo={canRedo}
                     onUndo={handleUndo}
                     onRedo={handleRedo}
+                    onStartOver={handleStartOver}
                   />
                 </div>
                 <Canvas
@@ -720,9 +800,9 @@ const App: React.FC = () => {
               >
                   <div className="md:hidden flex items-center justify-between border-b border-gray-200/70 px-4 py-4">
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">Ayarlar</p>
-                      <p className="mt-1 text-sm text-gray-700">Yüklemeler ve kombin adımları</p>
-                    </div>
+                       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">{workspaceMode === 'modelSwap' ? 'Manken Değiştir' : 'Ayarlar'}</p>
+                       <p className="mt-1 text-sm text-gray-700">{workspaceMode === 'modelSwap' ? 'Yeni manken yükleyip kombini koru' : 'Yüklemeler ve kombin adımları'}</p>
+                     </div>
                     <button
                       type="button"
                       onClick={() => setIsMobileDrawerOpen(false)}
@@ -738,6 +818,15 @@ const App: React.FC = () => {
                         <p className="font-bold">Error</p>
                         <p>{error}</p>
                       </div>
+                    )}
+                    {workspaceMode === 'modelSwap' && (
+                      <ModelSwapPanel
+                        currentModelImageUrl={modelImageUrl}
+                        pendingModelImageUrl={pendingModelSwapPreviewUrl}
+                        onSelectFile={handleSelectModelSwapFile}
+                        onApply={handleApplyModelSwap}
+                        isLoading={isLoading}
+                      />
                     )}
                     <OutfitStack
                       outfitHistory={activeOutfitLayers}
@@ -825,7 +914,7 @@ const App: React.FC = () => {
                       selectedScene={selectedScene}
                       selectedLighting={selectedLighting}
                       qualityMode={sceneQualityMode}
-                      onSelectScene={setSelectedScene}
+                      onSelectScene={handleSelectScene}
                       onSelectLighting={setSelectedLighting}
                       onChangeQualityMode={setSceneQualityMode}
                       onSelectCustomScene={handleSelectCustomScene}

@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import Canvas from './Canvas';
 
 describe('Canvas', () => {
-  it('renders a persistent pose button before the download button', () => {
+  it('renders compact pose chips', () => {
     render(
       <Canvas
         displayImageUrl="https://example.com/look.png"
@@ -20,19 +20,21 @@ describe('Canvas', () => {
         canRedo={false}
         onUndo={vi.fn()}
         onRedo={vi.fn()}
+        onRegenerate={vi.fn()}
       />
     );
 
-    const poseButton = screen.getByRole('button', { name: /poz üret/i });
-    const downloadButton = screen.getByRole('button', { name: /indir/i });
+    const poseLabels = screen.getAllByText('Pose');
+    const downloadButton = screen.getByRole('button', { name: 'İndir' });
 
-    expect(poseButton).toBeInTheDocument();
+    expect(poseLabels).toHaveLength(2);
     expect(downloadButton).toBeInTheDocument();
-    expect(poseButton.compareDocumentPosition(downloadButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(poseButton.className).toContain('fixed');
+    expect(poseLabels[0].compareDocumentPosition(downloadButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it('opens pose options when the persistent pose button is clicked', () => {
+  it('selects a pose chip directly', () => {
+    const onSelectPose = vi.fn();
+
     render(
       <Canvas
         displayImageUrl="https://example.com/look.png"
@@ -41,7 +43,7 @@ describe('Canvas', () => {
         canDownload={true}
         isLoading={false}
         loadingMessage=""
-        onSelectPose={vi.fn()}
+        onSelectPose={onSelectPose}
         poseInstructions={['Front', 'Side']}
         currentPoseIndex={0}
         availablePoseKeys={['Front']}
@@ -49,11 +51,13 @@ describe('Canvas', () => {
         canRedo={false}
         onUndo={vi.fn()}
         onRedo={vi.fn()}
+        onRegenerate={vi.fn()}
       />
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /poz üret/i }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Pose' })[0]);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Side' })[0]);
 
-    expect(screen.getByRole('button', { name: 'Side' })).toBeInTheDocument();
+    expect(onSelectPose).toHaveBeenCalledWith(1);
   });
 });

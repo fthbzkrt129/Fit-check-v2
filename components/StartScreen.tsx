@@ -14,8 +14,8 @@ import heroImage from '../assets/ana.png';
 import editedHeroImage from '../assets/düzenlenmiş.png';
 
 interface StartScreenProps {
-  onModelFinalized: (modelUrl: string) => void;
   onExperimentalStyling: (modelUrl: string) => void;
+  onModelFinalized: (modelUrl: string, target?: 'styling' | 'modelSwap') => void;
 }
 
 const StartScreen: React.FC<StartScreenProps> = ({ onModelFinalized, onExperimentalStyling }) => {
@@ -161,8 +161,8 @@ const StartScreen: React.FC<StartScreenProps> = ({ onModelFinalized, onExperimen
                   >
                     Use Different Photo
                   </button>
-                  <button 
-                    onClick={() => onModelFinalized(generatedModelUrl)}
+                  <button
+                    onClick={() => onModelFinalized(generatedModelUrl, 'styling')}
                     className="w-full sm:w-auto relative inline-flex items-center justify-center px-8 py-3 text-base font-semibold text-white bg-gray-900 rounded-md cursor-pointer group hover:bg-gray-700 transition-colors"
                   >
                     Proceed to Styling &rarr;
@@ -172,6 +172,12 @@ const StartScreen: React.FC<StartScreenProps> = ({ onModelFinalized, onExperimen
                     className="w-full sm:w-auto relative inline-flex items-center justify-center px-8 py-3 text-base font-semibold text-gray-900 bg-white border border-gray-300 rounded-md cursor-pointer group hover:bg-gray-100 transition-colors"
                   >
                     Deneysel kombin giydir
+                  </button>
+                  <button
+                    onClick={() => onModelFinalized(generatedModelUrl, 'modelSwap')}
+                    className="w-full sm:w-auto rounded-md border border-gray-300 bg-white px-6 py-3 text-base font-semibold text-gray-700 transition-colors hover:bg-gray-50"
+                  >
+                    Manken Değiştir
                   </button>
                 </motion.div>
               )}

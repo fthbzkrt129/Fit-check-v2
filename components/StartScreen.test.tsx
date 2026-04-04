@@ -78,4 +78,15 @@ describe('StartScreen', () => {
     });
     expect(onModelFinalized).not.toHaveBeenCalled();
   });
+
+  it('shows the model swap action and routes it through onModelFinalized', async () => {
+    const { onModelFinalized } = await generateModel();
+
+    const modelSwapButton = screen.getByRole('button', { name: 'Manken Değiştir' });
+    expect(modelSwapButton).toBeTruthy();
+
+    fireEvent.click(modelSwapButton);
+
+    expect(onModelFinalized).toHaveBeenCalledWith('https://example.com/generated-model.png', 'modelSwap');
+  });
 });

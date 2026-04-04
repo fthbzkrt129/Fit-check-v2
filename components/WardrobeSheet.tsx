@@ -7,6 +7,7 @@ import { defaultWardrobe } from '../wardrobe';
 import type { WardrobeItem } from '../types';
 import { UploadCloudIcon, CheckCircleIcon, XIcon } from './icons';
 import { AnimatePresence, motion } from 'framer-motion';
+import { formatWardrobeItemName } from '../lib/wardrobeItemName';
 
 
 interface WardrobeModalProps {
@@ -48,8 +49,9 @@ const WardrobeModal: React.FC<WardrobeModalProps> = ({ isOpen, onClose, onGarmen
             }
             const customGarmentInfo: WardrobeItem = {
                 id: `custom-${Date.now()}`,
-                name: file.name,
+                name: formatWardrobeItemName(file.name),
                 url: URL.createObjectURL(file), // for preview, not used by API
+                source: 'user',
             };
             onGarmentSelect(file, customGarmentInfo);
         }
@@ -92,7 +94,7 @@ const WardrobeModal: React.FC<WardrobeModalProps> = ({ isOpen, onClose, onGarmen
                                 >
                                 <img src={item.url} alt={item.name} className="w-full h-full object-cover" />
                                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <p className="text-white text-xs font-bold text-center p-1">{item.name}</p>
+                                    <p className="max-w-full truncate px-2 text-white text-xs font-bold text-center" title={item.name}>{item.name}</p>
                                 </div>
                                 {isActive && (
                                     <div className="absolute inset-0 bg-gray-900/70 flex items-center justify-center">
