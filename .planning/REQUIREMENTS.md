@@ -56,33 +56,31 @@ Milat v1.1 — landing page.
 
 ## Traceability
 
-Roadmap olusturulurken doldurulacak.
-
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| HOME-01 | Phase [N] | Pending |
-| HOME-02 | Phase [N] | Pending |
-| HOME-03 | Phase [N] | Pending |
-| HOME-04 | Phase [N] | Pending |
-| HOME-05 | Phase [N] | Pending |
-| HOME-06 | Phase [N] | Pending |
-| HOME-07 | Phase [N] | Pending |
-| AUTH-01 | Phase [N] | Pending |
-| AUTH-02 | Phase [N] | Pending |
-| AUTH-03 | Phase [N] | Pending |
-| AUTH-04 | Phase [N] | Pending |
-| FLOW-01 | Phase [N] | Pending |
-| FLOW-02 | Phase [N] | Pending |
-| FLOW-03 | Phase [N] | Pending |
-| CONT-01 | Phase [N] | Pending |
-| CONT-02 | Phase [N] | Pending |
-| CONT-03 | Phase [N] | Pending |
+| HOME-01 | Phase 8 | Pending |
+| HOME-02 | Phase 8 | Pending |
+| HOME-03 | Phase 8 | Pending |
+| HOME-04 | Phase 8 | Pending |
+| HOME-05 | Phase 9 | Pending |
+| HOME-06 | Phase 9 | Pending |
+| HOME-07 | Phase 9 | Pending |
+| AUTH-01 | Phase 7 | Pending |
+| AUTH-02 | Phase 7 | Pending |
+| AUTH-03 | Phase 7 | Pending |
+| AUTH-04 | Phase 7 | Pending |
+| FLOW-01 | Phase 8 | Pending |
+| FLOW-02 | Phase 6 | Pending |
+| FLOW-03 | Phase 6 | Pending |
+| CONT-01 | Phase 8 | Pending |
+| CONT-02 | Phase 9 | Pending |
+| CONT-03 | Phase 8 | Pending |
 
 **Coverage:**
 - v1 requirements: 17 total
-- Mapped to phases: 0
-- Unmapped: 17 ⚠
+- Mapped to phases: 17
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-04-05*
-*Last updated: 2026-04-05 after initial definition for v1.1 landing page*
+*Last updated: 2026-04-06 after roadmap creation for v1.1 landing page*
