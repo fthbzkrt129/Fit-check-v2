@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const updateSession = vi.fn();
+const { updateSession } = vi.hoisted(() => ({
+  updateSession: vi.fn()
+}));
 
 vi.mock("@/lib/env", () => ({
   getPublicEnv: () => ({
@@ -12,6 +14,8 @@ vi.mock("@/lib/env", () => ({
 vi.mock("@/lib/supabase/middleware", () => ({
   updateSession
 }));
+
+vi.mock("@/lib/tenant/entryContract", async () => import("./entryContract"));
 
 import {
   getEntryRedirectIntent,
