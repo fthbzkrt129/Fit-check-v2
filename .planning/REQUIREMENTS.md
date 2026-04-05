@@ -27,7 +27,7 @@ Milat v1.1 — landing page.
 ### Conversion And Flow
 
 - [ ] **FLOW-01**: Ziyaretci homepage CTA'larindan giris/kayit sayfasina tutarli sekilde yonlenebilir
-- [ ] **FLOW-02**: Root domain marketing yuzeyi, tenant routing ve mevcut auth callback akisini bozmaz
+- [x] **FLOW-02**: Root domain marketing yuzeyi, tenant routing ve mevcut auth callback akisini bozmaz
 - [ ] **FLOW-03**: Auth sonrasi mevcut `next` / workspace handoff davranisi korunur
 
 ### Content And Trust
@@ -70,7 +70,7 @@ Milat v1.1 — landing page.
 | AUTH-03 | Phase 7 | Pending |
 | AUTH-04 | Phase 7 | Pending |
 | FLOW-01 | Phase 8 | Pending |
-| FLOW-02 | Phase 6 | Pending |
+| FLOW-02 | Phase 6 | Complete |
 | FLOW-03 | Phase 6 | Pending |
 | CONT-01 | Phase 8 | Pending |
 | CONT-02 | Phase 9 | Pending |

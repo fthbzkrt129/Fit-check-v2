@@ -26,7 +26,10 @@ v1.1 milestone'i, mevcut tenant/auth omurgasini bozmadan root domain uzerinde pr
   1. Ziyaretci root domain marketing yuzeyine geldiginde tenant rewrite veya redirect carpismasi yasamaz.
   2. Kullanici auth sonrasinda mevcut `next` / workspace handoff davranisiyla dogru yere devam eder.
   3. Public auth callback ve tenant routing birlikte calisir; kullanici auth akisi sirasinda loop veya kayip yonlendirme gormez.
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [x] 06-01-PLAN.md — Root/tenant entry contract ve middleware guvenligini tek sozlesmede toplar
+- [ ] 06-02-PLAN.md — Login, callback ve finish-signup handoff davranisini canonical workspace redirect'e sabitler
 
 ### Phase 7: Branded Login Experience
 **Goal**: Kullanici homepage ile gorsel olarak uyumlu, net ve yonlendirici bir login/kayit girisi gorur.
@@ -68,7 +71,7 @@ v1.1 milestone'i, mevcut tenant/auth omurgasini bozmadan root domain uzerinde pr
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 6. Entry Contract Hardening | v1.1 | 0/TBD | Not started | - |
+| 6. Entry Contract Hardening | v1.1 | 1/2 | In Progress|  |
 | 7. Branded Login Experience | v1.1 | 0/TBD | Not started | - |
 | 8. Editorial Homepage Core | v1.1 | 0/TBD | Not started | - |
 | 9. Trust, Pricing & Footer Finish | v1.1 | 0/TBD | Not started | - |
