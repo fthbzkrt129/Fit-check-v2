@@ -1,10 +1,83 @@
-import { describe, expect, it } from "vitest";
+import { NextRequest, NextResponse } from "next/server";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const updateSession = vi.fn();
+
+vi.mock("@/lib/env", () => ({
+  getPublicEnv: () => ({
+    rootDomain: "fitcheck.app"
+  })
+}));
+
+vi.mock("@/lib/supabase/middleware", () => ({
+  updateSession
+}));
 
 import {
   getEntryRedirectIntent,
   getTenantRewritePath,
   isBypassedPath
 } from "./entryContract";
+import { config, middleware } from "../../../middleware";
+
+describe("entry middleware", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("passes root marketing and auth routes through without tenant rewrite", async () => {
+    updateSession.mockResolvedValue({ response: NextResponse.next(), user: null });
+
+    const marketingResponse = await middleware(
+      new NextRequest("https://fitcheck.app/", {
+        headers: { host: "fitcheck.app" }
+      })
+    );
+
+    const loginResponse = await middleware(
+      new NextRequest("https://fitcheck.app/login", {
+        headers: { host: "fitcheck.app" }
+      })
+    );
+
+    expect(marketingResponse.headers.get("x-middleware-rewrite")).toBeNull();
+    expect(marketingResponse.headers.get("location")).toBeNull();
+    expect(loginResponse.headers.get("x-middleware-rewrite")).toBeNull();
+    expect(loginResponse.headers.get("location")).toBeNull();
+  });
+
+  it("redirects anonymous tenant traffic to the root login route", async () => {
+    updateSession.mockResolvedValue({ response: NextResponse.next(), user: null });
+
+    const response = await middleware(
+      new NextRequest("https://styling.fitcheck.app/closet", {
+        headers: { host: "styling.fitcheck.app" }
+      })
+    );
+
+    expect(response.headers.get("location")).toBe("https://fitcheck.app/login?next=styling");
+  });
+
+  it("rewrites authenticated tenant traffic into the tenant shell path", async () => {
+    updateSession.mockResolvedValue({ response: NextResponse.next(), user: { id: "user-1" } });
+
+    const response = await middleware(
+      new NextRequest("https://styling.fitcheck.app/outfits", {
+        headers: { host: "styling.fitcheck.app" }
+      })
+    );
+
+    expect(response.headers.get("x-middleware-rewrite")).toBe(
+      "https://styling.fitcheck.app/_tenant/styling/outfits"
+    );
+  });
+
+  it("excludes api, static assets, and metadata files from the matcher", () => {
+    expect(config.matcher).toEqual([
+      "/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)"
+    ]);
+  });
+});
 
 describe("entry contract", () => {
   it("keeps root hosts on the shared surface", () => {
