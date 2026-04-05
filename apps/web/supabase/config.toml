@@ -1,12 +1,12 @@
 project_id = "fit-check-web"
 
 [db]
-port = 54322
-shadow_port = 54320
+port = 55432
+shadow_port = 55430
 major_version = 15
 
 [studio]
-port = 54323
+port = 55433
 
 [auth]
 site_url = "http://localhost:3000"
@@ -14,7 +14,12 @@ additional_redirect_urls = ["http://localhost:3000/auth/callback", "https://fitc
 enable_signup = true
 
 [api]
-port = 54321
+port = 55431
 
 [analytics]
 enabled = false
+
+[inbucket]
+port = 55434
+smtp_port = 55435
+pop3_port = 55436

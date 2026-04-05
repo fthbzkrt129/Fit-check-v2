@@ -2,7 +2,7 @@
 
 ## What This Is
 
-fit-check, kullanıcıların fotoğraf yükleyerek kıyafetleri sanal olarak denemesini sağlayan bir web uygulaması. Gemini AI ile görsel işleme yapılır — kıyafet ekleme, poz değiştirme, sahne oluşturma gibi akışlar sunulur. React 19 + Vite ile geliştirilmiş, tamamen istemci tarafı çalışan bir SPA'dır.
+fit-check, kullanicilarin fotoğraf yukleyerek kiyafetleri sanal olarak denemesini saglayan bir urun. v1.0 sonunda proje iki yuzlu hale geldi: mevcut React + Vite deneyimi korunurken `apps/web` altinda Supabase-first auth, tenant routing ve server-side AI gateway iceren yeni SaaS omurgasi kuruldu.
 
 ## Core Value
 
@@ -25,29 +25,28 @@ Kullanıcı gerçek kıyafetlerini fotoğraftaki modele koyup farklı kombinasyo
 - ✓ fal.ai bundle prompt/service contract deterministic ve retry-safe çalışır — Phase 04
 - ✓ Deneysel akış loading, retry ve duplicate-submit guard içerir — Phase 04
 - ✓ Deneysel prompt/service/UI davranışı testlerle doğrulandı — Phase 04
+- ✓ Session persistence ile outfit history, wardrobe ve scene state yenilemede korunur — Phase 02
+- ✓ En-boy oranı koruma akışı virtual try-on render'larinda uygulanır — Phase 01
+- ✓ Undo/redo temel arayüzü ve gezinme akışı eklendi — Phase 03
+- ✓ Supabase auth, tenant bootstrap, secure AI gateway ve local DB verification tamamlandı — Phase 05
 
 ### Active
 
-- [ ] **UNDO-01**: Kullanıcı son eklenen kombin parçasını geri alabilir
-- [ ] **UNDO-02**: Kullanıcı geri alınan parçayı yineleyebilir
-- [ ] **SESS-01**: Sayfa yenilenince kombin geçmişi kaybolmaz
-- [ ] **SESS-02**: Sayfa yenilenince dolap verisi kaybolmaz
-- [ ] **RATIO-01**: Kare formatlı parça eklenince base görselin en-boy oranı korunur
-- [ ] **RATIO-02**: Farklı boyutlardaki görseller birleştirilirken orantılı ölçekleme yapılır
+- [ ] Yeni milestone kapsamını tanımla (`/gsd-new-milestone`)
+- [ ] Legacy Vite deneyimi ile yeni `apps/web` SaaS omurgasi arasindaki urun stratejisini netlestir
+- [ ] Production auth teslimati icin custom SMTP veya password-first onboarding stratejisini sec
 
 ### Out of Scope
 
-- Kullanıcı hesap sistemi / giriş — Yerel depolama yeterli, auth karmaşıklığına gerek yok
 - Çoklu kullanıcı paylaşımı — Tek kullanıcı odaklı, sosyal özellikler ileride
 - Mobil native uygulama — Web-first yaklaşım, PWA ileride değerlendirilir
 
 ## Context
 
-- Ortam değişkenleri: `GEMINI_API_KEY`, `FAL_KEY` (deneysel akış için)
-- Tüm görseller data URL olarak state'te tutulur (base64)
-- Tailwind CDN üzerinden yükleniyor (npm'den değil)
-- Karışık Türkçe/İngilizce arayüz metinleri
-- `App.tsx` merkezileşmiş state yönetimi — 20+ useState
+- Legacy app: React 19 + Vite 6 + TypeScript 5.8
+- New app: Next.js 15 + Supabase SSR + Postgres tenant foundation
+- Ortam degiskenleri artik iki yuzde ayrisiyor: legacy tarafta Gemini/fal akislar, `apps/web` tarafinda Supabase + server-side AI keys
+- Local Supabase gelistirme portlari Windows rezerv araliklarini asmak icin `55431-55436` bandina tasindi
 
 ## Constraints
 
@@ -60,10 +59,11 @@ Kullanıcı gerçek kıyafetlerini fotoğraftaki modele koyup farklı kombinasyo
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Oturum için sessionStorage/localStorage | Sunucu yok, auth yok — yerel depolama tek seçenek | — Beklemede |
-| Undo/redo için zustand veya useState | Mevcut yapı useState ile — ekleme mi, refactor mü? | — Beklemede |
-| En-boy oranı için canvas resize mi, padding mi? | Kalite kaybı vs boyut tutarlılığı | — Beklemede |
-| Deneysel kombin provider'ı | Kullanıcı bütçe tasarrufu için fal.ai istedi | fal.ai çoklu referans akışı planlanacak |
+| Oturum için sessionStorage/localStorage | Sunucu yok, auth yok — yerel depolama tek seçenek | ✓ Session persistence uygulandi |
+| Undo/redo için zustand veya useState | Mevcut yapı useState ile — ekleme mi, refactor mü? | ✓ useState tabanli ilk surum uygulandi |
+| En-boy oranı için canvas resize mi, padding mi? | Kalite kaybı vs boyut tutarlılığı | ✓ Virtual try-on akisi icin koruma uygulandi |
+| Deneysel kombin provider'ı | Kullanıcı bütçe tasarrufu için fal.ai istedi | ✓ fal.ai bundled styling eklendi |
+| AI key izolasyonu ve tenant auth | Browser key exposure riski vardi | ✓ Supabase-first SaaS omurgasi ile server-side gateway'e tasindi |
 
 ## Evolution
 
@@ -71,7 +71,13 @@ Bu belge aşama geçişleri ve milat sınırlarında güncellenir.
 
 ## Current State
 
-Phase 04 tamamlandı — standart Gemini styling akışı korunurken alternatif fal.ai bundled styling akışı eklendi.
+v1.0 shipped. Legacy styling deneyimi calisiyor; buna ek olarak `apps/web` altinda login/signup, tenant bootstrap, secure AI routes ve local db verification'dan gecmis yeni SaaS foundation hazir.
+
+## Next Milestone Goals
+
+- Legacy urunu ve yeni SaaS omurgasini ayni urun stratejisinde birlestirmek
+- Auth teslimatinda production-ready email/sifre stratejisini netlestirmek
+- Sonraki milestone icin fresh requirements tanimlamak
 
 **Her aşama geçişinden sonra** (via `/gsd-transition`):
 1. Gereksinimler geçersizleşti mi? → Out of Scope'a taşı (sebebiyle)
@@ -87,4 +93,4 @@ Phase 04 tamamlandı — standart Gemini styling akışı korunurken alternatif 
 4. Context'i mevcut duruma göre güncelle
 
 ---
-*Son güncelleme: 2026-04-02 — Phase 4 deneysel kombin akışı tamamlandı*
+*Last updated: 2026-04-05 after v1.0 milestone*
