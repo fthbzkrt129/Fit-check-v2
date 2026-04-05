@@ -73,6 +73,16 @@ Bu belge aşama geçişleri ve milat sınırlarında güncellenir.
 
 v1.0 shipped. Legacy styling deneyimi calisiyor; buna ek olarak `apps/web` altinda login/signup, tenant bootstrap, secure AI routes ve local db verification'dan gecmis yeni SaaS foundation hazir.
 
+## Current Milestone: v1.1 landing page
+
+**Goal:** SaaS urununu guven olusturarak anlatan, cok bolumlu bir homepage ve onunla uyumlu giris sayfasi olusturmak.
+
+**Target features:**
+- Moda odakli, editorial tarza yakin premium homepage
+- Hero + ozellikler + nasil calisir + sosyal kanit/ornek kullanim + footer
+- Homepage ile uyumlu, daha iyi sunulmus giris sayfasi
+- Footerlar ve baslik hiyerarsisinin netlestirilmesi
+
 ## Next Milestone Goals
 
 - Legacy urunu ve yeni SaaS omurgasini ayni urun stratejisinde birlestirmek
@@ -93,4 +103,4 @@ v1.0 shipped. Legacy styling deneyimi calisiyor; buna ek olarak `apps/web` altin
 4. Context'i mevcut duruma göre güncelle
 
 ---
-*Last updated: 2026-04-05 after v1.0 milestone*
+*Last updated: 2026-04-05 after starting v1.1 milestone*

@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: milestone_archived
-last_updated: "2026-04-05T21:20:11.163Z"
+status: defining_requirements
+last_updated: "2026-04-05T21:35:00.000Z"
 last_activity: 2026-04-05
 progress:
   total_phases: 7
@@ -14,9 +14,9 @@ progress:
 
 ## Current Position
 
-Phase: 05 (backend-guvenligi-api-key-izolasyonu-multi-tenant-saas-mimarisi-ve-postgresql-stratejisi) — COMPLETE
-Plan: Complete
-Status: v1.0 archived, next milestone hazirligi bekleniyor
+Phase: Not started (defining requirements)
+Plan: -
+Status: Defining requirements
 Last activity: 2026-04-05
 
 ## Project Reference
@@ -24,7 +24,7 @@ Last activity: 2026-04-05
 Bkz: .planning/PROJECT.md (güncellendi 2026-04-02)
 
 **Core value:** Kullanıcı gerçek kıyafetlerini fotoğraftaki modele koyup farklı kombinasyonları hızlıca görselleştirebilmeli.
-**Current focus:** v1.0 arsivlendi; yeni milestone icin fresh requirements ve roadmap bekleniyor
+**Current focus:** Milestone v1.1 landing page tanimlaniyor; homepage + giris sayfasi kapsamı netlestiriliyor
 
 ## Accumulated Context
 
@@ -62,4 +62,5 @@ Bkz: .planning/PROJECT.md (güncellendi 2026-04-02)
 
 ## Pending
 
-- Yeni milestone baslatilmadi; `/gsd-new-milestone` sonraki adim
+- v1.1 requirements olusturulacak
+- v1.1 roadmap olusturulacak
