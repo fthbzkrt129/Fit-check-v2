@@ -52,7 +52,7 @@ Each task was committed atomically:
 1. **Task 1: Extract the root-versus-tenant entry contract into a pure helper** - `5439856`, `de5c0a9` (test, feat)
 2. **Task 2: Refit middleware to the shared contract and narrow the matcher** - `1245026`, `98d4ab4` (test, feat)
 
-**Plan metadata:** pending
+**Plan metadata:** `1889728` (docs)
 
 _Note: TDD tasks produced RED and GREEN commits per task._
 
