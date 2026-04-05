@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-import { getPublicEnv } from "@/lib/env";
+import { getSupabasePublicEnv } from "@/lib/env";
 
 type CookieMutation = {
   name: string;
@@ -10,7 +10,7 @@ type CookieMutation = {
 };
 
 export const updateSession = async (request: NextRequest) => {
-  const { supabaseUrl, supabaseAnonKey } = getPublicEnv();
+  const { supabaseUrl, supabaseAnonKey } = getSupabasePublicEnv();
 
   let response = NextResponse.next({
     request: {

@@ -1,8 +1,11 @@
 import { z, type ZodIssue } from "zod";
 
-const publicEnvSchema = z.object({
+const supabasePublicEnvSchema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: z.string().trim().url("NEXT_PUBLIC_SUPABASE_URL must be a valid URL."),
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().trim().min(1, "NEXT_PUBLIC_SUPABASE_ANON_KEY is required."),
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().trim().min(1, "NEXT_PUBLIC_SUPABASE_ANON_KEY is required.")
+});
+
+const publicEnvSchema = supabasePublicEnvSchema.extend({
   NEXT_PUBLIC_ROOT_DOMAIN: z.string().trim().min(1, "NEXT_PUBLIC_ROOT_DOMAIN is required.")
 });
 
@@ -13,11 +16,16 @@ const serverEnvSchema = z.object({
 });
 
 type PublicEnvInput = Partial<Record<keyof z.infer<typeof publicEnvSchema>, string | undefined>>;
+type SupabasePublicEnvInput = Partial<Record<keyof z.infer<typeof supabasePublicEnvSchema>, string | undefined>>;
 type ServerEnvInput = Partial<Record<keyof z.infer<typeof serverEnvSchema>, string | undefined>>;
 
-const readPublicEnv = (): PublicEnvInput => ({
+const readSupabasePublicEnv = (): SupabasePublicEnvInput => ({
   NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+});
+
+const readPublicEnv = (): PublicEnvInput => ({
+  ...readSupabasePublicEnv(),
   NEXT_PUBLIC_ROOT_DOMAIN: process.env.NEXT_PUBLIC_ROOT_DOMAIN
 });
 
@@ -44,6 +52,19 @@ const buildEnvError = (scope: string, issues: ZodIssue[]) => {
   return new Error(
     `Invalid ${scope} environment configuration. Missing or invalid: ${missingKeys.join(", ")}. ${issueMessages}`
   );
+};
+
+export const getSupabasePublicEnv = (input: SupabasePublicEnvInput = readSupabasePublicEnv()) => {
+  const parsed = supabasePublicEnvSchema.safeParse(input);
+
+  if (!parsed.success) {
+    throw buildEnvError("public", parsed.error.issues);
+  }
+
+  return {
+    supabaseUrl: parsed.data.NEXT_PUBLIC_SUPABASE_URL,
+    supabaseAnonKey: parsed.data.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  };
 };
 
 export const getPublicEnv = (input: PublicEnvInput = readPublicEnv()) => {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { getPublicEnv, getServerEnv } from "./env";
+import { getPublicEnv, getServerEnv, getSupabasePublicEnv } from "./env";
 
 describe("env contract", () => {
   it("fails fast when required public vars are missing", () => {
@@ -37,6 +37,16 @@ describe("env contract", () => {
     });
 
     expect(
+      getSupabasePublicEnv({
+        NEXT_PUBLIC_SUPABASE_URL: "https://project.supabase.co",
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: "anon-key"
+      })
+    ).toEqual({
+      supabaseUrl: "https://project.supabase.co",
+      supabaseAnonKey: "anon-key"
+    });
+
+    expect(
       getServerEnv({
         SUPABASE_SERVICE_ROLE_KEY: "service-role",
         GEMINI_API_KEY: "gemini-key",
@@ -46,6 +56,18 @@ describe("env contract", () => {
       supabaseServiceRoleKey: "service-role",
       geminiApiKey: "gemini-key",
       falKey: "fal-key"
+    });
+  });
+
+  it("allows Supabase public env usage without root domain", () => {
+    expect(
+      getSupabasePublicEnv({
+        NEXT_PUBLIC_SUPABASE_URL: "https://project.supabase.co",
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: "anon-key"
+      })
+    ).toEqual({
+      supabaseUrl: "https://project.supabase.co",
+      supabaseAnonKey: "anon-key"
     });
   });
 

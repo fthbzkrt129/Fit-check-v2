@@ -125,6 +125,12 @@ a {
   gap: 16px;
 }
 
+.auth-mode-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
 .login-form__field {
   display: grid;
   gap: 8px;
@@ -138,6 +144,10 @@ a {
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.04);
   color: inherit;
+}
+
+.login-help {
+  font-size: 0.95rem;
 }
 
 .tenant-shell {
