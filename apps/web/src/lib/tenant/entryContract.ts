@@ -57,7 +57,7 @@ export const isBypassedPath = (pathname: string) => {
 
 export const getTenantRewritePath = (workspaceSlug: string, pathname: string) => {
   const normalizedPathname = normalizePathname(pathname);
-  return trimTrailingSlash(`/_tenant/${workspaceSlug}${normalizedPathname}`);
+  return trimTrailingSlash(`/workspace/${workspaceSlug}${normalizedPathname}`);
 };
 
 export const getEntryRedirectIntent = ({

@@ -211,22 +211,55 @@ When the user asks a question:
 
 Prefer answering from the maintained wiki layer rather than rediscovering knowledge from raw sources each time.
 
-## Wrap-Up Workflow
+## Wrap-Up ve Hafiza Kaydi
 
-When the user signals session-close intent such as `wrap up`, `wrap-up`, `done for now`, `finish coding`, `bugunluk kapat`, or `oturumu kapat`, run the wrap-up pipeline.
+When the user signals session-close intent such as `wrap up`, `wrap-up`, `done for now`, `finish coding`, `bugunluk kapat`, or `oturumu kapat`, run the canonical wrap-up pipeline.
 
-Sequence:
+The default flow is: `wrap-up` -> `obsidian-markdown` -> raw wrap-up -> NotebookLM -> `erp-wiki-orchestrator` -> wiki durable updates.
+Unless the user explicitly opts out, the full chain should run.
+
+### Step 1 - Context ve Audit
 
 1. Read the current relevant wiki context
 2. Audit the repo with `git status --short` and `git diff --stat`
 3. Run repo-aware quality checks for both root `package.json` and `apps/web/package.json`
 4. Record missing scripts explicitly as `not available`
-5. Write a raw wrap-up artifact to `../../second-brain/raw/wrap-ups/wrap-up-YYYY-MM-DD-<slug>.md`
-6. Write a companion source page to `../../second-brain/wiki/sources/session-YYYY-MM-DD-<slug>-wrapup.md`
-7. Update related `project/` and `runbooks/` pages if the workflow knowledge changed
-8. Update `../../second-brain/wiki/index.md`, `../../second-brain/wiki/overview.md`, and `../../second-brain/wiki/log.md`
-9. Upload the raw wrap-up markdown file to NotebookLM notebook `Virtualize` (`ae930df0-0cc0-4899-8843-963bee33fcf3`)
-10. If NotebookLM upload fails, log the blocker explicitly and do not pretend wrap-up completed cleanly
+
+### Step 2 - Raw Wrap-Up Dosyasi Yaz
+
+- Call `obsidian-markdown`
+- Write the raw wrap-up artifact to `../../second-brain/raw/wrap-ups/wrap-up-YYYY-MM-DD-<slug>.md`
+- Use Obsidian-compatible frontmatter and `[[Page Name]]` links in the raw wrap-up where relevant
+
+### Step 3 - Companion Source Page Yaz
+
+- Write a companion source page to `../../second-brain/wiki/sources/session-YYYY-MM-DD-<slug>-wrapup.md`
+- The source page should link back to the raw wrap-up artifact and the affected durable wiki pages
+
+### Step 4 - NotebookLM'e Kaynak Ekle
+
+- Upload the raw wrap-up markdown file to NotebookLM notebook `Virtualize` (`ae930df0-0cc0-4899-8843-963bee33fcf3`)
+- If NotebookLM upload fails, log the blocker explicitly in the raw wrap-up and `../../second-brain/wiki/log.md`
+- Do not claim the wrap-up completed cleanly unless the upload succeeded or the failure context was recorded explicitly
+
+### Step 5 - Wiki Hafiza Zinciri
+
+- First choice is `erp-wiki-orchestrator`
+- When needed, it should trigger `erp-wiki-ingestor`, `erp-decision-capturer`, `erp-runbook-extractor`, and `erp-wiki-normalizer`
+- Apply `obsidian-markdown` to all durable wiki page writes
+- Update related `project/` and `runbooks/` pages if the workflow knowledge changed
+- Update `../../second-brain/wiki/index.md`, `../../second-brain/wiki/overview.md`, and `../../second-brain/wiki/log.md`
+- After wiki pages are updated, refresh the vault index with `obsidian-cli` when available in the environment
+
+### Step 6 - Mevcut Hafiza Taramasi (Gerekirse)
+
+- If wrap-up needs a fast scan of existing pages, decisions, or module coverage before writing durable updates, use `obsidian-bases`
+- This is especially useful when the session introduced a new operating pattern, durable workflow change, or decision-level impact
+
+### Step 7 - Gorsellestirme (Gerekirse)
+
+- If the session produced a complex dependency map, decision tree, or workflow graph, attach a durable visual artifact when tooling is available
+- `json-canvas` is not currently present in this repo, so do not require it; only use a canvas-style visualization step if the skill/tool is added later
 
 ### Wrap-Up Sections
 

@@ -10,6 +10,7 @@ import {
 
 const ROOT_PASS_PATHS = new Set(["/", "/login"]);
 const AUTH_PATH_PREFIXES = ["/auth/callback", "/auth/finish-signup"];
+const DEV_WORKSPACE_PREFIX = "/dev/";
 
 const copyCookies = (source: NextResponse, target: NextResponse) => {
   source.cookies.getAll().forEach((cookie) => {
@@ -25,6 +26,23 @@ const isRootPassPath = (pathname: string) =>
 export async function middleware(request: NextRequest) {
   if (isBypassedPath(request.nextUrl.pathname)) {
     return NextResponse.next();
+  }
+
+  // Local dev shortcut: /dev/[slug] → /_tenant/[slug]/
+  if (request.nextUrl.pathname.startsWith(DEV_WORKSPACE_PREFIX)) {
+    const slug = request.nextUrl.pathname.slice(DEV_WORKSPACE_PREFIX.length).split("/")[0];
+    if (slug) {
+      const { response, user } = await updateSession(request);
+      if (!user) {
+        const { rootDomain } = getPublicEnv();
+        const loginUrl = new URL(`http://${rootDomain}/login`);
+        loginUrl.searchParams.set("next", slug);
+        return copyCookies(response, NextResponse.redirect(loginUrl));
+      }
+      const rewrittenUrl = request.nextUrl.clone();
+      rewrittenUrl.pathname = getTenantRewritePath(slug, "/");
+      return copyCookies(response, NextResponse.rewrite(rewrittenUrl));
+    }
   }
 
   const { rootDomain } = getPublicEnv();

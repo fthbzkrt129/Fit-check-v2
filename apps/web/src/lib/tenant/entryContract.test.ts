@@ -72,7 +72,7 @@ describe("entry middleware", () => {
     );
 
     expect(response.headers.get("x-middleware-rewrite")).toBe(
-      "https://styling.fitcheck.app/_tenant/styling/outfits"
+      "https://styling.fitcheck.app/workspace/styling/outfits"
     );
   });
 
@@ -156,9 +156,9 @@ describe("entry contract", () => {
     });
 
     expect(getTenantRewritePath("styling", "/outfits/look-1")).toBe(
-      "/_tenant/styling/outfits/look-1"
+      "/workspace/styling/outfits/look-1"
     );
-    expect(getTenantRewritePath("styling", "/")).toBe("/_tenant/styling");
+    expect(getTenantRewritePath("styling", "/")).toBe("/workspace/styling");
   });
 
   it("identifies bypassed asset and metadata paths", () => {

@@ -58,14 +58,20 @@ At the start of each session working in `apps/web`, read in this order:
 ### Wrap-Up
 
 1. Trigger on session-close intent such as `wrap up`, `done for now`, or `bugunluk kapat`
-2. Audit git state with `git status --short` and `git diff --stat`
-3. Run quality checks separately for root `package.json` and `apps/web/package.json`
-4. Record missing scripts as `not available`
-5. Write raw wrap-up under `../../second-brain/raw/wrap-ups/`
-6. Write companion wrap-up source page under `../../second-brain/wiki/sources/`
-7. Update affected `project`, `runbooks`, `overview`, `index`, and `log`
+2. Run the canonical chain: `wrap-up` -> `obsidian-markdown` -> raw wrap-up -> NotebookLM -> `erp-wiki-orchestrator` -> durable wiki updates
+3. Audit git state with `git status --short` and `git diff --stat`
+4. Run quality checks separately for root `package.json` and `apps/web/package.json`
+5. Record missing scripts as `not available`
+6. Write raw wrap-up under `../../second-brain/raw/wrap-ups/` using `obsidian-markdown`
+7. Write companion wrap-up source page under `../../second-brain/wiki/sources/`
 8. Upload the raw wrap-up file to NotebookLM notebook `Virtualize` (`ae930df0-0cc0-4899-8843-963bee33fcf3`)
-9. If upload fails, log the blocker explicitly
+9. If upload fails, log the blocker explicitly in both the raw wrap-up and `../../second-brain/wiki/log.md`
+10. First choice for durable memory updates is `erp-wiki-orchestrator`
+11. When needed, trigger `erp-wiki-ingestor`, `erp-decision-capturer`, `erp-runbook-extractor`, and `erp-wiki-normalizer`
+12. Apply `obsidian-markdown` to durable wiki page writes and refresh the vault index with `obsidian-cli` when available
+13. Update affected `project`, `runbooks`, `overview`, `index`, and `log`
+14. If wrap-up needs a quick memory scan before writing durable pages, use `obsidian-bases`
+15. `json-canvas` is not currently available in this repo, so visualization is optional and should only be added if that skill/tool is introduced later
 
 ### Schema
 
