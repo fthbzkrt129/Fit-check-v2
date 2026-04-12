@@ -1,10 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
 
-import { getServerEnv, getSupabasePublicEnv } from "@/lib/env";
+import { getSupabaseAdminEnv, getSupabasePublicEnv } from "@/lib/env";
 
 export const createSupabaseAdminClient = () => {
   const { supabaseUrl, supabaseAnonKey } = getSupabasePublicEnv();
-  const { supabaseServiceRoleKey } = getServerEnv();
+  const { supabaseServiceRoleKey } = getSupabaseAdminEnv();
 
   return createClient(supabaseUrl, supabaseServiceRoleKey || supabaseAnonKey, {
     auth: {

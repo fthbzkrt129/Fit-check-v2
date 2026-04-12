@@ -1,6 +1,17 @@
 import { describe, expect, it } from "vitest";
 
-import { getPublicEnv, getServerEnv, getSupabasePublicEnv } from "./env";
+import { getPublicEnv, getServerEnv, getSupabaseAdminEnv, getSupabasePublicEnv } from "./env";
+
+describe("getSupabaseAdminEnv", () => {
+  it("succeeds with only SUPABASE_SERVICE_ROLE_KEY — GEMINI_API_KEY and FAL_KEY are not required", () => {
+    const result = getSupabaseAdminEnv({ SUPABASE_SERVICE_ROLE_KEY: "test-service-key" });
+    expect(result.supabaseServiceRoleKey).toBe("test-service-key");
+  });
+
+  it("throws when SUPABASE_SERVICE_ROLE_KEY is missing", () => {
+    expect(() => getSupabaseAdminEnv({})).toThrow("SUPABASE_SERVICE_ROLE_KEY");
+  });
+});
 
 describe("env contract", () => {
   it("fails fast when required public vars are missing", () => {

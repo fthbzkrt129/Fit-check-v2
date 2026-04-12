@@ -71,8 +71,9 @@ export const bootstrapWorkspaceForUser = async ({ userId, email, fullName }: Boo
   }
 
   const baseSlug = slugify(fullName || email.split("@")[0] || userId.slice(0, 8));
-  const organizationSlug = `${baseSlug}-org`;
-  const workspaceSlug = baseSlug;
+  const suffix = userId.slice(0, 6);
+  const organizationSlug = `${baseSlug}-org-${suffix}`;
+  const workspaceSlug = `${baseSlug}-${suffix}`;
   const organizationName = fullName?.trim() || email;
 
   const { data: organization, error: organizationError } = await admin
@@ -86,6 +87,43 @@ export const bootstrapWorkspaceForUser = async ({ userId, email, fullName }: Boo
     .single();
 
   if (organizationError) {
+    // 23505 = unique_violation: org already bootstrapped; re-fetch and recover
+    if ((organizationError as unknown as { code?: string }).code === "23505") {
+      const { data: existingOrg } = await admin
+        .from("organizations")
+        .select("id, slug")
+        .eq("owner_user_id", userId)
+        .maybeSingle();
+
+      if (existingOrg) {
+        const { data: existingWs } = await admin
+          .from("workspaces")
+          .select("id, slug")
+          .eq("organization_id", existingOrg.id)
+          .maybeSingle();
+
+        if (existingWs) {
+          const { data: existingMs } = await admin
+            .from("workspace_memberships")
+            .select("id")
+            .eq("user_id", userId)
+            .eq("workspace_id", existingWs.id)
+            .maybeSingle();
+
+          if (existingMs) {
+            return {
+              organizationId: existingOrg.id,
+              organizationSlug: existingOrg.slug,
+              workspaceId: existingWs.id,
+              workspaceSlug: existingWs.slug,
+              membershipId: existingMs.id,
+              role: "owner",
+              created: false
+            };
+          }
+        }
+      }
+    }
     throw organizationError;
   }
 

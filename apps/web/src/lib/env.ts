@@ -9,14 +9,18 @@ const publicEnvSchema = supabasePublicEnvSchema.extend({
   NEXT_PUBLIC_ROOT_DOMAIN: z.string().trim().min(1, "NEXT_PUBLIC_ROOT_DOMAIN is required.")
 });
 
-const serverEnvSchema = z.object({
-  SUPABASE_SERVICE_ROLE_KEY: z.string().trim().min(1, "SUPABASE_SERVICE_ROLE_KEY is required."),
+const supabaseAdminEnvSchema = z.object({
+  SUPABASE_SERVICE_ROLE_KEY: z.string().trim().min(1, "SUPABASE_SERVICE_ROLE_KEY is required.")
+});
+
+const serverEnvSchema = supabaseAdminEnvSchema.extend({
   GEMINI_API_KEY: z.string().trim().min(1, "GEMINI_API_KEY is required."),
   FAL_KEY: z.string().trim().min(1, "FAL_KEY is required.")
 });
 
 type PublicEnvInput = Partial<Record<keyof z.infer<typeof publicEnvSchema>, string | undefined>>;
 type SupabasePublicEnvInput = Partial<Record<keyof z.infer<typeof supabasePublicEnvSchema>, string | undefined>>;
+type SupabaseAdminEnvInput = Partial<Record<keyof z.infer<typeof supabaseAdminEnvSchema>, string | undefined>>;
 type ServerEnvInput = Partial<Record<keyof z.infer<typeof serverEnvSchema>, string | undefined>>;
 
 const readSupabasePublicEnv = (): SupabasePublicEnvInput => ({
@@ -27,6 +31,10 @@ const readSupabasePublicEnv = (): SupabasePublicEnvInput => ({
 const readPublicEnv = (): PublicEnvInput => ({
   ...readSupabasePublicEnv(),
   NEXT_PUBLIC_ROOT_DOMAIN: process.env.NEXT_PUBLIC_ROOT_DOMAIN
+});
+
+const readSupabaseAdminEnv = (): SupabaseAdminEnvInput => ({
+  SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY
 });
 
 const readServerEnv = (): ServerEnvInput => ({
@@ -52,6 +60,18 @@ const buildEnvError = (scope: string, issues: ZodIssue[]) => {
   return new Error(
     `Invalid ${scope} environment configuration. Missing or invalid: ${missingKeys.join(", ")}. ${issueMessages}`
   );
+};
+
+export const getSupabaseAdminEnv = (input: SupabaseAdminEnvInput = readSupabaseAdminEnv()) => {
+  const parsed = supabaseAdminEnvSchema.safeParse(input);
+
+  if (!parsed.success) {
+    throw buildEnvError("supabase-admin", parsed.error.issues);
+  }
+
+  return {
+    supabaseServiceRoleKey: parsed.data.SUPABASE_SERVICE_ROLE_KEY
+  };
 };
 
 export const getSupabasePublicEnv = (input: SupabasePublicEnvInput = readSupabasePublicEnv()) => {

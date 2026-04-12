@@ -15,13 +15,18 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  const workspace = await bootstrapWorkspaceForUser({
-    userId: user.id,
-    email: user.email,
-    fullName: (user.user_metadata?.full_name as string | undefined) ?? null
-  });
+  try {
+    const workspace = await bootstrapWorkspaceForUser({
+      userId: user.id,
+      email: user.email,
+      fullName: (user.user_metadata?.full_name as string | undefined) ?? null
+    });
 
-  const { rootDomain } = getPublicEnv();
+    const { rootDomain } = getPublicEnv();
 
-  return NextResponse.redirect(buildWorkspaceUrl(workspace.workspaceSlug, rootDomain));
+    return NextResponse.redirect(buildWorkspaceUrl(workspace.workspaceSlug, rootDomain));
+  } catch (err) {
+    console.error("[finish-signup] bootstrap error for user", user.id, err);
+    return NextResponse.redirect(new URL("/login?error=setup_failed", request.url));
+  }
 }
