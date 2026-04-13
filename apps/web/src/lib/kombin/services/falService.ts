@@ -1,11 +1,7 @@
-import { ApiError, ValidationError, fal, isRetryableError } from '@fal-ai/client';
-
 import { buildExperimentalBundleInput } from '@/lib/kombin/experimentalBundle';
+import { imageUrlToDataUrl, blobToDataUrl } from '@/lib/kombin/imagePersistence';
+import { aiSuccessSchema } from '@/lib/ai/contracts';
 import type { ExperimentalGarmentSelection, ExperimentalImageSource } from '@/lib/kombin/types';
-
-const DEFAULT_EXPERIMENTAL_FAL_MODEL = 'fal-ai/wan/v2.7/edit';
-const MAX_ATTEMPTS = 2;
-const RETRYABLE_STATUS_CODES = [408, 409, 425, 429, 500, 502, 503, 504];
 
 type ExperimentalGenerationRequest = {
   baseModelImage: ExperimentalImageSource;
@@ -14,161 +10,99 @@ type ExperimentalGenerationRequest = {
   onStatusUpdate?: (message: string) => void;
 };
 
-const getImportMetaEnv = () => {
-  try {
-    return (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env;
-  } catch {
-    return undefined;
-  }
-};
-
-const getEnvValue = (key: string) => {
-  const importMetaEnv = getImportMetaEnv();
-
-  return process.env[key] ?? importMetaEnv?.[key] ?? importMetaEnv?.[`VITE_${key}`];
-};
-
-const configureFalClient = () => {
-  const falKey = getEnvValue('FAL_KEY');
-
-  if (!falKey) {
-    throw new Error('fal.ai deneysel akışı yapılandırılmadı. Lütfen FAL_KEY ayarını ekleyin.');
-  }
-
-  // Security caveat: this browser-only SPA currently passes fal credentials to the client,
-  // matching the existing Gemini env exposure pattern until a server-side proxy is introduced.
-  fal.config({ credentials: falKey });
-};
-
-const uploadImageSource = async (source: ExperimentalImageSource) => {
+const normalizeImageSource = async (source: ExperimentalImageSource) => {
   if (typeof source === 'string') {
-    return source;
+    return imageUrlToDataUrl(source);
   }
 
-  return fal.storage.upload(source);
+  return blobToDataUrl(source);
 };
 
-const getStatusMessage = (status?: string) => {
-  switch (status) {
-    case 'IN_QUEUE':
-      return 'Kombin siraya alindi...';
-    case 'IN_PROGRESS':
-      return 'Kombin olusturuluyor...';
-    case 'COMPLETED':
-      return 'Son goruntu hazirlaniyor...';
-    default:
-      return 'Kombin isleniyor...';
+const resolveWorkspaceSlug = (locationLike: Pick<Location, 'pathname' | 'hostname'> | null | undefined): string => {
+  const pathname = locationLike?.pathname ?? '';
+  const workspaceMatch = pathname.match(/^\/workspace\/([^/]+)/);
+  if (workspaceMatch?.[1]) {
+    return decodeURIComponent(workspaceMatch[1]);
   }
+
+  const devMatch = pathname.match(/^\/dev\/([^/]+)/);
+  if (devMatch?.[1]) {
+    return decodeURIComponent(devMatch[1]);
+  }
+
+  const hostname = locationLike?.hostname ?? '';
+  const hostParts = hostname.split('.').filter(Boolean);
+  if (hostParts.length >= 3 && hostParts[0]) {
+    return hostParts[0];
+  }
+
+  throw new Error('Workspace slug could not be resolved for secure experimental request.');
 };
 
-const normalizeFalResult = (result: any): string => {
-  const firstImage = result?.data?.images?.[0];
-
-  if (typeof firstImage === 'string') {
-    return firstImage;
-  }
-
-  if (typeof firstImage?.url === 'string') {
-    return firstImage.url;
-  }
-
-  if (typeof result?.data?.image === 'string') {
-    return result.data.image;
-  }
-
-  if (typeof result?.data?.image?.url === 'string') {
-    return result.data.image.url;
-  }
-
-  throw new Error('fal.ai sonucu görsel döndürmedi.');
-};
-
-const normalizeFalError = (error: unknown): Error => {
-  if (error instanceof ValidationError) {
-    return new Error('Deneysel kombin isteği doğrulanamadı. Lütfen seçimleri ve açıklamayı kontrol edin.');
-  }
-
-  if (error instanceof ApiError) {
-    if (error.status === 401 || error.status === 403) {
-      return new Error('fal.ai kimlik doğrulaması başarısız. FAL_KEY ayarını kontrol edin.');
-    }
-
-    const apiDetail = typeof error.body === 'string'
-      ? error.body
-      : JSON.stringify(error.body ?? {}).slice(0, 300);
-
-    return new Error(`fal.ai deneysel kombin isteği şu anda tamamlanamadı. ${apiDetail || 'Lutfen tekrar deneyin.'}`);
-  }
-
-  if (error instanceof Error) {
-    return error;
-  }
-
-  return new Error('Deneysel kombin üretimi beklenmeyen bir nedenle başarısız oldu.');
-};
-
-const buildFalRequestInput = async (request: ExperimentalGenerationRequest) => {
+const buildExperimentalRequestPayload = async (
+  request: ExperimentalGenerationRequest,
+  normalizeSource: (source: ExperimentalImageSource) => Promise<string> = normalizeImageSource,
+) => {
   const bundle = buildExperimentalBundleInput(
     request.baseModelImage,
     request.garmentSelections,
     request.finalSceneDescription,
   );
 
-  const uploadedImages = await Promise.all(bundle.imageInputs.map(uploadImageSource));
-  const rawInput = {
-    prompt: bundle.prompt,
-    image_urls: uploadedImages,
-    num_images: 1,
-    output_format: 'png',
-    enable_prompt_expansion: false,
-  };
+  const imageInputs = await Promise.all(bundle.imageInputs.map((source) => normalizeSource(source)));
+  const workspaceSlug = resolveWorkspaceSlug(typeof window === 'undefined' ? null : window.location);
 
-  return await fal.storage.transformInput(rawInput);
+  return {
+    workspaceSlug,
+    baseModelImage: imageInputs[0],
+    imageInputs,
+    garments: bundle.garments.map(({ id, name, category, imageIndex }) => ({
+      id,
+      name,
+      category,
+      imageIndex,
+    })),
+    finalSceneDescription: bundle.finalSceneDescription,
+    prompt: bundle.prompt,
+  };
 };
 
-const executeFalRequest = async (request: ExperimentalGenerationRequest) => {
-  const endpoint = getExperimentalFalModel();
-  const input = await buildFalRequestInput(request);
-  const submitted = await fal.queue.submit(endpoint, { input });
-
-  request.onStatusUpdate?.('Kombin olusturma baslatildi...');
-
-  await fal.queue.subscribeToStatus(endpoint, {
-    requestId: submitted.request_id,
-    onQueueUpdate: (update) => request.onStatusUpdate?.(getStatusMessage(update?.status)),
+const requestExperimentalImage = async (
+  request: ExperimentalGenerationRequest,
+  fetchImpl: typeof fetch = fetch,
+  normalizeSource: (source: ExperimentalImageSource) => Promise<string> = normalizeImageSource,
+) => {
+  const payload = await buildExperimentalRequestPayload(request, normalizeSource);
+  const response = await fetchImpl('/api/ai/experimental', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
   });
 
-  const result = await fal.queue.result(endpoint, { requestId: submitted.request_id });
-  return normalizeFalResult(result);
-};
+  if (!response.ok) {
+    const message = (await response.text()).trim();
+    throw Object.assign(new Error(message || 'Deneysel kombin üretilemedi.'), {
+      status: response.status,
+    });
+  }
 
-export const getExperimentalFalModel = () => {
-  const configuredModel = getEnvValue('VITE_FAL_EXPERIMENTAL_MODEL');
-  return configuredModel?.trim() || DEFAULT_EXPERIMENTAL_FAL_MODEL;
+  const body = aiSuccessSchema.parse(await response.json());
+  return body.imageUrl;
 };
 
 export const generateExperimentalOutfitImage = async (
   request: ExperimentalGenerationRequest,
+  fetchImpl: typeof fetch = fetch,
+  normalizeSource: (source: ExperimentalImageSource) => Promise<string> = normalizeImageSource,
 ): Promise<string> => {
-  configureFalClient();
+  return requestExperimentalImage(request, fetchImpl, normalizeSource);
+};
 
-  let attempt = 0;
-
-  while (attempt < MAX_ATTEMPTS) {
-    try {
-      return await executeFalRequest(request);
-    } catch (error) {
-      const canRetry = attempt === 0 && isRetryableError(error, RETRYABLE_STATUS_CODES);
-
-      if (canRetry) {
-        attempt += 1;
-        request.onStatusUpdate?.('Geçici fal.ai hatası nedeniyle istek bir kez yeniden deneniyor...');
-        continue;
-      }
-
-      throw normalizeFalError(error);
-    }
-  }
-
-  throw new Error('fal.ai deneysel kombin isteği şu anda tamamlanamadı. Lütfen tekrar deneyin.');
+export const __private__ = {
+  buildExperimentalRequestPayload,
+  normalizeImageSource,
+  requestExperimentalImage,
+  resolveWorkspaceSlug,
 };

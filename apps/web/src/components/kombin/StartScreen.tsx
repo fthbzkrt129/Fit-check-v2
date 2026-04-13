@@ -90,12 +90,14 @@ const StartScreen: React.FC<StartScreenProps> = ({ onModelFinalized, onExperimen
                 Ever wondered how an outfit would look on you? Stop guessing. Upload a photo and see for yourself. Our AI creates your personal model, ready to try on anything.
               </p>
               <hr className="my-8 border-gray-200" />
-              <div className="flex flex-col items-center lg:items-start w-full gap-3">
-                <label htmlFor="image-upload-start" className="w-full relative flex items-center justify-center px-8 py-3 text-base font-semibold text-white bg-gray-900 rounded-md cursor-pointer group hover:bg-gray-700 transition-colors">
-                  <UploadCloudIcon className="w-5 h-5 mr-3" />
-                  Upload Photo
-                </label>
-                <input id="image-upload-start" type="file" className="hidden" accept="image/png, image/jpeg, image/webp, image/avif, image/heic, image/heif" onChange={handleFileChange} />
+               <div className="flex flex-col items-center lg:items-start w-full gap-3">
+                 <label htmlFor="image-upload-start" className="w-full relative flex items-center justify-center px-8 py-3 text-base font-semibold text-[#fcfbf8] bg-[#1c1c1c] rounded-md cursor-pointer transition-opacity duration-200 hover:opacity-80 focus:outline-none focus:shadow-lg" style={{
+                   boxShadow: 'rgba(255,255,255,0.2) 0px 0.5px 0px 0px inset, rgba(0,0,0,0.2) 0px 0px 0px 0.5px inset, rgba(0,0,0,0.05) 0px 1px 2px 0px'
+                 }}>
+                   <UploadCloudIcon className="w-5 h-5 mr-3" />
+                   Upload Photo
+                 </label>
+                 <input id="image-upload-start" type="file" className="hidden" accept="image/png, image/jpeg, image/webp, image/avif, image/heic, image/heif" onChange={handleFileChange} />
                 <p className="text-gray-500 text-sm">Select a clear, full-body photo. Face-only photos also work, but full-body is preferred for best results.</p>
                 <p className="text-gray-500 text-xs mt-1">By uploading, you agree not to create harmful, explicit, or unlawful content. This service is for creative and responsible use only.</p>
                 {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
@@ -153,31 +155,41 @@ const StartScreen: React.FC<StartScreenProps> = ({ onModelFinalized, onExperimen
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 10 }}
                   transition={{ duration: 0.5 }}
-                  className="flex flex-col sm:flex-row items-center gap-4 mt-8"
+                  className="flex flex-col sm:flex-row items-center gap-4 mt-8 w-full"
                 >
-                  <button 
-                    onClick={reset}
-                    className="w-full sm:w-auto px-6 py-3 text-base font-semibold text-gray-700 bg-gray-200 rounded-md cursor-pointer hover:bg-gray-300 transition-colors"
-                  >
-                    Use Different Photo
-                  </button>
+                  {/* Proceed to Styling - Primary Dark Button */}
                   <button
                     onClick={() => onModelFinalized(generatedModelUrl, 'styling')}
-                    className="w-full sm:w-auto relative inline-flex items-center justify-center px-8 py-3 text-base font-semibold text-white bg-gray-900 rounded-md cursor-pointer group hover:bg-gray-700 transition-colors"
+                    className="w-full sm:w-auto relative inline-flex items-center justify-center px-8 py-3 text-base font-semibold text-[#fcfbf8] bg-[#1c1c1c] rounded-md cursor-pointer transition-opacity duration-200 hover:opacity-80 focus:outline-none focus:shadow-lg"
+                    style={{
+                      boxShadow: 'rgba(255,255,255,0.2) 0px 0.5px 0px 0px inset, rgba(0,0,0,0.2) 0px 0px 0px 0.5px inset, rgba(0,0,0,0.05) 0px 1px 2px 0px'
+                    }}
                   >
-                    Proceed to Styling &rarr;
+                    Proceed to Styling →
                   </button>
+                  
+                  {/* Deneysel kombin giydir - Ghost Button */}
                   <button
                     onClick={() => onExperimentalStyling(generatedModelUrl)}
-                    className="w-full sm:w-auto relative inline-flex items-center justify-center px-8 py-3 text-base font-semibold text-gray-900 bg-white border border-gray-300 rounded-md cursor-pointer group hover:bg-gray-100 transition-colors"
+                    className="w-full sm:w-auto relative inline-flex items-center justify-center px-8 py-3 text-base font-semibold text-[#1c1c1c] bg-transparent border border-[rgba(28,28,28,0.4)] rounded-md cursor-pointer transition-opacity duration-200 hover:opacity-80 focus:outline-none focus:shadow-lg"
                   >
                     Deneysel kombin giydir
                   </button>
+                  
+                  {/* Manken Değiştir - Cream Surface Button */}
                   <button
                     onClick={() => onModelFinalized(generatedModelUrl, 'modelSwap')}
-                    className="w-full sm:w-auto rounded-md border border-gray-300 bg-white px-6 py-3 text-base font-semibold text-gray-700 transition-colors hover:bg-gray-50"
+                    className="w-full sm:w-auto px-8 py-3 text-base font-semibold text-[#1c1c1c] bg-[#f7f4ed] rounded-md cursor-pointer border border-[#eceae4] transition-opacity duration-200 hover:opacity-80 focus:outline-none focus:shadow-lg"
                   >
                     Manken Değiştir
+                  </button>
+
+                  {/* Use Different Photo - Secondary Action */}
+                  <button 
+                    onClick={reset}
+                    className="w-full sm:w-auto px-6 py-3 text-base font-semibold text-[#1c1c1c] bg-transparent border border-[#eceae4] rounded-md cursor-pointer transition-opacity duration-200 hover:opacity-80 focus:outline-none focus:shadow-lg"
+                  >
+                    Use Different Photo
                   </button>
                 </motion.div>
               )}

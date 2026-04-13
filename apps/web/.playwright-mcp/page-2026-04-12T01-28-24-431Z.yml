@@ -1,0 +1,41 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e6] [cursor=pointer]:
+    - button "Open Next.js Dev Tools" [ref=e7]:
+      - img [ref=e8]
+    - generic [ref=e11]:
+      - button "Open issues overlay" [ref=e12]:
+        - generic [ref=e13]:
+          - generic [ref=e14]: "0"
+          - generic [ref=e15]: "1"
+        - generic [ref=e16]: Issue
+      - button "Collapse issues badge" [ref=e17]:
+        - img [ref=e18]
+  - main [ref=e20]:
+    - generic [ref=e21]:
+      - generic [ref=e22]:
+        - generic [ref=e23]: Workspace
+        - heading "test-user-1775869083317-f760e7" [level=1] [ref=e24]
+      - generic [ref=e25]:
+        - generic [ref=e27]:
+          - generic [ref=e29]:
+            - heading "Create Your Model for Any Look." [level=1] [ref=e30]
+            - paragraph [ref=e31]: Ever wondered how an outfit would look on you? Stop guessing. Upload a photo and see for yourself. Our AI creates your personal model, ready to try on anything.
+            - separator [ref=e32]
+            - generic [ref=e33]:
+              - generic [ref=e34]:
+                - img [ref=e35]
+                - text: Upload Photo
+              - button "Upload Photo" [ref=e38]
+              - paragraph [ref=e39]: Select a clear, full-body photo. Face-only photos also work, but full-body is preferred for best results.
+              - paragraph [ref=e40]: By uploading, you agree not to create harmful, explicit, or unlawful content. This service is for creative and responsible use only.
+          - generic [ref=e42]:
+            - img [ref=e48]
+            - img "first image" [ref=e54]
+            - img "second image" [ref=e55]
+        - generic [ref=e57]:
+          - paragraph [ref=e58]:
+            - text: Created by
+            - link "@ammaar" [ref=e59] [cursor=pointer]:
+              - /url: https://x.com/ammaar
+          - paragraph [ref=e61]: "Remix idea: Generate a shareable lookbook."
+  - alert [ref=e62]

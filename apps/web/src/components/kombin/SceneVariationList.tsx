@@ -4,7 +4,7 @@ import type { SceneVariation } from '@/lib/kombin/types';
 interface SceneVariationListProps {
   variations: SceneVariation[];
   selectedVariationId: string | null;
-  onSelectVariation: (id: string) => void;
+  onSelectVariation: (id: string | null) => void;
   isLoading: boolean;
 }
 
@@ -29,6 +29,20 @@ const SceneVariationList: React.FC<SceneVariationListProps> = ({
         </p>
       ) : (
         <div className="grid grid-cols-1 gap-3">
+          <button
+            type="button"
+            onClick={() => onSelectVariation(null)}
+            disabled={isLoading}
+            aria-label="clear-scene-selection"
+            className={`flex items-center justify-between gap-3 rounded-xl border p-3 text-left transition-all ${
+              selectedVariationId === null ? 'border-gray-900 bg-gray-50 shadow-sm' : 'border-gray-200 bg-white hover:border-gray-300'
+            } ${isLoading ? 'cursor-not-allowed opacity-70' : ''}`}
+          >
+            <div>
+              <p className="text-sm font-semibold text-gray-800">Kombine geri dön</p>
+              <p className="text-xs text-gray-500">Aktif styling görüntüsünü göster</p>
+            </div>
+          </button>
           {variations.map((variation) => {
             const isSelected = variation.id === selectedVariationId;
             const sceneLabel = formatLabel(variation.scene);

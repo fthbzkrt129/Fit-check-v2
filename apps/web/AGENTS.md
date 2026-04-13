@@ -32,6 +32,17 @@ At the start of each session working in `apps/web`, read in this order:
 
 ## Default Operation Order
 
+### Debug Pipeline
+
+1. Trigger on intents such as `debug et`, `hata var`, `bug var`, `neden bozuluyor`, `root cause bul`, or `incele ve çöz`
+2. Start with the canonical process chain: `using-superpowers` -> `find-skills` -> `systematic-debugging`
+3. If the issue is multi-layered, ambiguous, or requires tradeoff analysis, add `sequential-thinking`
+4. Do not propose or apply a fix before the root cause is evidenced clearly
+5. Once root cause is confirmed, move to `writing-plans` or a minimal explicit fix plan
+6. If behavior will change or regression risk exists, use `test-driven-development` before implementation
+7. If the outcome is reusable operational knowledge, convert it into a runbook entry
+8. If the result changes durable project memory, update the relevant wiki pages plus `overview`, `index`, and `log`
+
 ### Ingest
 
 1. Classify the raw source if needed

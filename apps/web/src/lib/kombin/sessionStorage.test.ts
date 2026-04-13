@@ -10,6 +10,8 @@ const createSessionData = (overrides: Partial<SessionData> = {}): SessionData =>
   sceneVariations: [],
   activeCategory: 'top',
   selectedTopLength: null,
+  selectedDressLength: null,
+  selectedOuterwearLength: null,
   wardrobeUserItems: [],
   outfitLayerMeta: [],
   hasModel: false,
@@ -41,6 +43,20 @@ describe('sessionStorage', () => {
     expect(loadSession()).toBeNull();
   });
 
+  it('returns null when localStorage is unavailable', () => {
+    const originalLocalStorage = globalThis.localStorage;
+    // @ts-expect-error test-only override
+    delete globalThis.localStorage;
+
+    expect(loadSession()).toBeNull();
+
+    Object.defineProperty(globalThis, 'localStorage', {
+      value: originalLocalStorage,
+      configurable: true,
+      writable: true,
+    });
+  });
+
   it('clears session data from localStorage', () => {
     const data = createSessionData();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -52,6 +68,23 @@ describe('sessionStorage', () => {
 
   it('returns null when session data is corrupted JSON', () => {
     localStorage.setItem(STORAGE_KEY, '{not-valid-json');
+
+    expect(loadSession()).toBeNull();
+  });
+
+  it('returns null when parsed session data has an invalid shape', () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      currentOutfitIndex: 0,
+      currentPoseIndex: 0,
+      sceneVariations: [],
+      activeCategory: 'top',
+      selectedTopLength: null,
+      selectedDressLength: null,
+      selectedOuterwearLength: null,
+      wardrobeUserItems: 'invalid',
+      outfitLayerMeta: [],
+      hasModel: false,
+    }));
 
     expect(loadSession()).toBeNull();
   });
@@ -73,8 +106,8 @@ describe('sessionStorage', () => {
   it('saves outfit layer metadata without image data', () => {
     const data = createSessionData({
       outfitLayerMeta: [
-        { garmentId: null, garmentName: null, category: 'base', topLength: null },
-        { garmentId: 'shirt-1', garmentName: 'Blue Shirt', category: 'top', topLength: 'waist' },
+        { garmentId: null, garmentName: null, category: 'base', topLength: null, dressLength: null, outerwearLength: null },
+        { garmentId: 'shirt-1', garmentName: 'Blue Shirt', category: 'top', topLength: 'waist', dressLength: null, outerwearLength: null },
       ],
       hasModel: true,
       currentOutfitIndex: 1,

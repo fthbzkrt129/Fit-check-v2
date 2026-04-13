@@ -15,6 +15,11 @@ export default defineConfig({
     passWithNoTests: true,
     projects: [
       {
+        resolve: {
+          alias: {
+            "@": path.resolve(__dirname, "./src")
+          }
+        },
         test: {
           name: "unit",
           include: ["src/**/*.test.ts"],

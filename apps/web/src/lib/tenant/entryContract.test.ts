@@ -136,12 +136,38 @@ describe("entry contract", () => {
       })
     ).toEqual({
       kind: "login-redirect",
+        workspaceSlug: "styling",
+        loginUrl: "http://localhost:3000/login?next=styling"
+      });
+
+    expect(
+      getEntryRedirectIntent({
+        host: "styling.app.test:3000",
+        rootDomain: "app.test:3000",
+        pathname: "/closet",
+        isAuthenticated: false
+      })
+    ).toEqual({
+      kind: "login-redirect",
       workspaceSlug: "styling",
-      loginUrl: "http://localhost:3000/login?next=styling"
+      loginUrl: "http://app.test:3000/login?next=styling"
     });
   });
 
   it("returns tenant rewrite intent for authenticated tenant hosts including preview hosts", () => {
+    expect(
+      getEntryRedirectIntent({
+        host: "styling.app.test:3000",
+        rootDomain: "app.test:3000",
+        pathname: "/",
+        isAuthenticated: true
+      })
+    ).toEqual({
+      kind: "tenant-rewrite",
+      workspaceSlug: "styling",
+      pathname: "/"
+    });
+
     expect(
       getEntryRedirectIntent({
         host: "styling---preview.vercel.app",

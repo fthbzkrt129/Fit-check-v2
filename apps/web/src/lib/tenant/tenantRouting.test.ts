@@ -21,6 +21,7 @@ describe("tenant routing", () => {
   it("normalizes local and preview hosts to canonical workspace URLs", () => {
     expect(buildWorkspaceUrl("styling", "fitcheck.app")).toBe("https://styling.fitcheck.app");
     expect(buildWorkspaceUrl("styling", "localhost:3000")).toBe("http://styling.localhost:3000");
+    expect(buildWorkspaceUrl("styling", "app.test:3000")).toBe("http://styling.app.test:3000");
     expect(resolveTenantHost("styling---preview.vercel.app", "fitcheck.app")).toMatchObject({
       kind: "tenant",
       workspaceSlug: "styling"

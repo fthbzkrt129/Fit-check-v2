@@ -1,5 +1,6 @@
-import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import React from 'react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import SceneVariationList from './SceneVariationList';
 import type { SceneVariation } from '@/lib/kombin/types';
 
@@ -25,6 +26,10 @@ const variations: SceneVariation[] = [
 ];
 
 describe('SceneVariationList', () => {
+  beforeEach(() => {
+    cleanup();
+  });
+
   it('renders previews and allows selecting a variation', () => {
     const onSelectVariation = vi.fn();
 
@@ -44,5 +49,21 @@ describe('SceneVariationList', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Studio Editorial/i }));
     expect(onSelectVariation).toHaveBeenCalledWith('scene-2');
+  });
+
+  it('lets the user return to the current styling image without a scene variation', () => {
+    const onSelectVariation = vi.fn();
+
+    render(
+      <SceneVariationList
+        variations={variations}
+        selectedVariationId="scene-1"
+        onSelectVariation={onSelectVariation}
+        isLoading={false}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'clear-scene-selection' }));
+    expect(onSelectVariation).toHaveBeenCalledWith(null);
   });
 });

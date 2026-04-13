@@ -3,16 +3,61 @@ import type { GarmentCategory, TopLengthOption, DressLengthOption, OuterwearLeng
 const CATEGORY_ORDER: GarmentCategory[] = ['top', 'outerwear', 'dress', 'bottom', 'footwear', 'accessory'];
 
 export const getNextCategory = (category: GarmentCategory): GarmentCategory => {
-  const currentIndex = CATEGORY_ORDER.indexOf(category);
-  return CATEGORY_ORDER[Math.min(currentIndex + 1, CATEGORY_ORDER.length - 1)];
+  switch (category) {
+    case 'top':
+    case 'outerwear':
+      return 'bottom';
+    case 'dress':
+    case 'bottom':
+      return 'footwear';
+    case 'footwear':
+      return 'accessory';
+    default:
+      return 'accessory';
+  }
 };
 
 export const isCategorySelectionAllowed = (
   activeCategory: GarmentCategory,
   nextCategory: GarmentCategory,
   selectedTopLength: TopLengthOption | null,
+  selectedDressLength: DressLengthOption | null,
+  selectedOuterwearLength: OuterwearLengthOption | null,
+  completedCategories: GarmentCategory[] = [],
 ): boolean => {
-  return true;
+  if (nextCategory === activeCategory) {
+    return true;
+  }
+
+  if (completedCategories.includes(nextCategory)) {
+    return true;
+  }
+
+  if (activeCategory === 'top' && !selectedTopLength) {
+    return false;
+  }
+
+  if (activeCategory === 'dress' && !selectedDressLength) {
+    return false;
+  }
+
+  if (activeCategory === 'outerwear' && !selectedOuterwearLength) {
+    return false;
+  }
+
+  if (activeCategory === 'top') {
+    return nextCategory === 'outerwear' || nextCategory === 'bottom' || nextCategory === 'dress';
+  }
+
+  if (activeCategory === 'outerwear') {
+    return nextCategory === 'bottom';
+  }
+
+  if (activeCategory === 'dress') {
+    return nextCategory === 'footwear';
+  }
+
+  return getNextCategory(activeCategory) === nextCategory;
 };
 
 export const CATEGORY_LABELS: Record<GarmentCategory, string> = {

@@ -1,3 +1,4 @@
+import { isLocalRootDomain } from "./buildWorkspaceUrl";
 import { resolveTenantHost } from "./resolveTenantHost";
 
 type EntryRedirectIntentArgs = {
@@ -36,7 +37,7 @@ const normalizePathname = (pathname: string) => {
 };
 
 const buildRootLoginUrl = (rootDomain: string, workspaceSlug: string) => {
-  const protocol = rootDomain.includes("localhost") ? "http" : "https";
+  const protocol = isLocalRootDomain(rootDomain) ? "http" : "https";
   const url = new URL(`${protocol}://${rootDomain}${ROOT_LOGIN_PATH}`);
   url.searchParams.set("next", workspaceSlug);
   return url.toString();

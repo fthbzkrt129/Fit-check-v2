@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { getSupabasePublicEnv } from "@/lib/env";
+import { getSupabaseCookieOptions } from "@/lib/supabase/cookieOptions";
 
 type CookieMutation = {
   name: string;
@@ -19,6 +20,7 @@ export const updateSession = async (request: NextRequest) => {
   });
 
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookieOptions: getSupabaseCookieOptions(),
     cookies: {
       getAll() {
         return request.cookies.getAll();

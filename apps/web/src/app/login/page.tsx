@@ -39,9 +39,10 @@ const LoginPage = () => {
   }, []);
 
   const getFinishSignupUrl = () => {
-    const url = new URL("/auth/finish-signup", window.location.origin);
-    if (nextWorkspace) url.searchParams.set("next", nextWorkspace);
-    return url.toString();
+    // Relative path kullan - middleware doğru rewrite yapacak
+    let url = "/auth/finish-signup";
+    if (nextWorkspace) url += `?next=${encodeURIComponent(nextWorkspace)}`;
+    return url;
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -53,13 +54,13 @@ const LoginPage = () => {
       const supabase = createSupabaseBrowserClient();
 
       if (mode === "magic-link") {
-        const redirectTo = new URL("/auth/callback", window.location.origin);
-        if (nextWorkspace) redirectTo.searchParams.set("next", nextWorkspace);
+         let redirectTo = `${window.location.origin}/auth/callback`;
+         if (nextWorkspace) redirectTo += `?next=${encodeURIComponent(nextWorkspace)}`;
 
-        const { error } = await supabase.auth.signInWithOtp({
-          email,
-          options: { emailRedirectTo: redirectTo.toString() },
-        });
+         const { error } = await supabase.auth.signInWithOtp({
+           email,
+           options: { emailRedirectTo: redirectTo },
+         });
 
         setStatus(
           error

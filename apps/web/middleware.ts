@@ -24,6 +24,7 @@ const isRootPassPath = (pathname: string) =>
   ROOT_PASS_PATHS.has(pathname) || AUTH_PATH_PREFIXES.some((path) => pathname.startsWith(path));
 
 export async function middleware(request: NextRequest) {
+  console.log("[MIDDLEWARE START]", request.nextUrl.pathname, request.headers.get("host"));
   if (isBypassedPath(request.nextUrl.pathname)) {
     return NextResponse.next();
   }
@@ -47,20 +48,13 @@ export async function middleware(request: NextRequest) {
 
   const { rootDomain } = getPublicEnv();
   const host = request.headers.get("host") ?? "";
-  const rootIntent = getEntryRedirectIntent({
-    host,
-    rootDomain,
-    pathname: request.nextUrl.pathname,
-    isAuthenticated: false
-  });
-
-  if (rootIntent.kind === "root-pass") {
-    if (isRootPassPath(request.nextUrl.pathname)) {
-      const { response } = await updateSession(request);
-      return response;
-    }
-
-    return NextResponse.next();
+  
+  // Force redirect localhost to lvh.me for full subdomain cookie support
+  if ((host.includes("localhost") || host.includes("127.0.0.1")) && rootDomain.includes("lvh.me")) {
+    const url = request.nextUrl.clone();
+    // Replaces localhost or slug.localhost with lvh.me equivalent
+    url.host = host.replace(/localhost|127\.0\.0\.1/, "lvh.me");
+    return NextResponse.redirect(url);
   }
 
   const { response, user } = await updateSession(request);
@@ -71,16 +65,33 @@ export async function middleware(request: NextRequest) {
     isAuthenticated: Boolean(user)
   });
 
+  console.log("[MIDDLEWARE TRACE]", {
+    reqHost: host,
+    reqPath: request.nextUrl.pathname,
+    hasUser: Boolean(user),
+    intentKind: entryIntent.kind,
+  });
+
   if (entryIntent.kind === "login-redirect") {
     return copyCookies(response, NextResponse.redirect(entryIntent.loginUrl));
   }
 
   if (entryIntent.kind === "root-pass") {
-    return response;
+    if (isRootPassPath(request.nextUrl.pathname)) {
+      return response;
+    }
+    return NextResponse.next();
   }
 
   const rewrittenUrl = request.nextUrl.clone();
   rewrittenUrl.pathname = getTenantRewritePath(entryIntent.workspaceSlug, entryIntent.pathname);
+  
+  console.log("[MIDDLEWARE] Rewriting tenant path:", {
+    original: request.nextUrl.pathname,
+    rewritten: rewrittenUrl.pathname,
+    host,
+    isAuth: Boolean(user)
+  });
 
   return copyCookies(response, NextResponse.rewrite(rewrittenUrl));
 }

@@ -1,5 +1,6 @@
+import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import type { WardrobeItem } from '@/lib/kombin/types';
 import WardrobePanel from './WardrobeModal';
@@ -45,8 +46,13 @@ class MockImage {
 
 describe('WardrobePanel', () => {
   beforeEach(() => {
+    cleanup();
     vi.restoreAllMocks();
     vi.stubGlobal('Image', MockImage as unknown as typeof Image);
+    vi.stubGlobal('URL', {
+      ...URL,
+      createObjectURL: vi.fn(() => 'blob:uploaded-garment'),
+    });
     vi.spyOn(document, 'createElement').mockImplementation(((tagName: string) => {
       if (tagName === 'canvas') {
         return {
@@ -116,6 +122,74 @@ describe('WardrobePanel', () => {
       category: 'top',
     });
   });
+
+  it('converts uploaded experimental garments into persistable data urls before staging', async () => {
+    const onGarmentSelect = vi.fn();
+    const onStageGarment = vi.fn();
+
+    class UploadFileReader {
+      public onload: (() => void) | null = null;
+      public result: string | null = null;
+
+      readAsDataURL() {
+        this.result = 'data:image/png;base64,uploaded-garment';
+        queueMicrotask(() => this.onload?.());
+      }
+    }
+
+    vi.stubGlobal('FileReader', UploadFileReader as unknown as typeof FileReader);
+
+    render(
+      <WardrobePanel
+        onGarmentSelect={onGarmentSelect}
+        onStageGarment={onStageGarment}
+        onPinItem={vi.fn()}
+        activeGarmentIds={[]}
+        isLoading={false}
+        wardrobe={wardrobe}
+        activeCategory="top"
+        selectionMode="experimental"
+      />,
+    );
+
+    const input = document.querySelector('#custom-garment-upload') as HTMLInputElement;
+    const file = new File(['upload'], 'upload-top.png', { type: 'image/png' });
+
+    fireEvent.change(input, { target: { files: [file] } });
+
+    await waitFor(() => {
+      expect(onStageGarment).toHaveBeenCalledWith(expect.objectContaining({
+        category: 'top',
+        source: 'data:image/png;base64,uploaded-garment',
+      }));
+    });
+    expect(onGarmentSelect).not.toHaveBeenCalled();
+  });
+
+  it('normalizes blob-backed wardrobe items before staging them in experimental mode', async () => {
+    const onStageGarment = vi.fn();
+
+    render(
+      <WardrobePanel
+        onGarmentSelect={vi.fn()}
+        onStageGarment={onStageGarment}
+        onPinItem={vi.fn()}
+        activeGarmentIds={[]}
+        isLoading={false}
+        wardrobe={[{ ...wardrobe[0], source: 'user', url: 'blob:http://localhost/uploaded-top' }]}
+        activeCategory="top"
+        selectionMode="experimental"
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Select Top One' }));
+
+    await waitFor(() => {
+      expect(onStageGarment).toHaveBeenCalledWith(expect.objectContaining({
+        source: expect.stringContaining('data:image/png;base64,'),
+      }));
+    });
+  });
 });
 
 describe('App experimental styling flow', () => {
@@ -132,25 +206,26 @@ describe('App experimental styling flow', () => {
       .mockReturnValueOnce(deferred)
       .mockResolvedValueOnce('https://example.com/experimental-look.png');
 
-    vi.doMock('../services/geminiService', () => ({
+    vi.doMock('@/lib/kombin/services/geminiService', () => ({
       generateModelImage: vi.fn(),
       generatePoseVariation: vi.fn(),
       generateSceneVariation: vi.fn(),
+      generateIdentityReferenceImage: vi.fn(),
+      generateModelSwapImage: vi.fn(),
       generateVirtualTryOnImage,
     }));
 
-    vi.doMock('../services/falService', () => ({
-      getExperimentalFalModel: vi.fn(() => 'wan/v2.6/image-to-image'),
+    vi.doMock('@/lib/kombin/services/falService', () => ({
       generateExperimentalOutfitImage,
     }));
 
-    vi.doMock('../wardrobe', () => ({ defaultWardrobe: wardrobe }));
-    vi.doMock('../lib/pinnedWardrobe', () => ({ addPinnedWardrobeItem: vi.fn(), getPinnedWardrobeItems: () => [] }));
-    vi.doMock('../lib/sessionStorage', () => ({ saveSession: vi.fn(), loadSession: () => null, clearSession: vi.fn() }));
-    vi.doMock('../src/lib/sessionPersistence', () => ({ saveSessionState: vi.fn(), restoreSessionState: () => null, clearSessionData: vi.fn() }));
-    vi.doMock('../lib/downloadImage', () => ({ downloadImage: vi.fn() }));
+    vi.doMock('@/lib/kombin/wardrobe', () => ({ defaultWardrobe: wardrobe }));
+    vi.doMock('@/lib/kombin/pinnedWardrobe', () => ({ addPinnedWardrobeItem: vi.fn(), getPinnedWardrobeItems: () => [] }));
+    vi.doMock('@/lib/kombin/sessionStorage', () => ({ saveSession: vi.fn(), loadSession: () => null, clearSession: vi.fn() }));
+    vi.doMock('@/lib/sessionPersistence', () => ({ saveSessionState: vi.fn(), restoreSessionState: () => null, clearSessionData: vi.fn() }));
+    vi.doMock('@/lib/kombin/downloadImage', () => ({ downloadImage: vi.fn() }));
 
-    vi.doMock('../components/StartScreen', () => ({
+    vi.doMock('@/components/kombin/StartScreen', () => ({
       default: ({ onModelFinalized, onExperimentalStyling }: { onModelFinalized: (url: string) => void; onExperimentalStyling: (url: string) => void }) => (
         <div>
           <button onClick={() => onModelFinalized('https://example.com/model.png')}>standard-entry</button>
@@ -159,15 +234,16 @@ describe('App experimental styling flow', () => {
       ),
     }));
 
-    vi.doMock('../components/Canvas', () => ({ default: () => <div>canvas</div> }));
-    vi.doMock('../components/UndoRedoBar', () => ({ default: () => <div>undo-redo</div> }));
-    vi.doMock('../components/OutfitStack', () => ({ default: () => <div>outfit-stack</div> }));
-    vi.doMock('../components/CategoryStepPanel', () => ({ default: () => <div>category-panel</div> }));
-    vi.doMock('../components/ScenePanel', () => ({ default: () => <div>scene-panel</div> }));
-    vi.doMock('../components/SceneVariationList', () => ({ default: () => <div>scene-variation-list</div> }));
-    vi.doMock('../components/Footer', () => ({ default: () => <div>footer</div> }));
-    vi.doMock('../components/Spinner', () => ({ default: () => <div>spinner</div> }));
-    vi.doMock('../components/WardrobeModal', () => ({
+    vi.doMock('@/components/kombin/Canvas', () => ({ default: () => <div>canvas</div> }));
+    vi.doMock('@/components/kombin/UndoRedoBar', () => ({ default: () => <div>undo-redo</div> }));
+    vi.doMock('@/components/kombin/OutfitStack', () => ({ default: () => <div>outfit-stack</div> }));
+    vi.doMock('@/components/kombin/CategoryStepPanel', () => ({ default: () => <div>category-panel</div> }));
+    vi.doMock('@/components/kombin/ScenePanel', () => ({ default: () => <div>scene-panel</div> }));
+    vi.doMock('@/components/kombin/SceneVariationList', () => ({ default: () => <div>scene-variation-list</div> }));
+    vi.doMock('@/components/kombin/Footer', () => ({ default: () => <div>footer</div> }));
+    vi.doMock('@/components/kombin/Spinner', () => ({ default: () => <div>spinner</div> }));
+    vi.doMock('@/components/kombin/ModelSwapPanel', () => ({ default: () => <div>model-swap-panel</div> }));
+    vi.doMock('@/components/kombin/WardrobeModal', () => ({
       default: ({ selectionMode, onGarmentSelect, onStageGarment, isLoading }: any) => (
         <div>
           <button

@@ -53,6 +53,15 @@ const urlToFile = (url: string, filename: string): Promise<File> => {
     });
 };
 
+const fileToDataUrl = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = (error) => reject(error);
+    });
+};
+
 const categoryLabels: Record<GarmentCategory, string> = {
     top: 'Üst Giyim',
     outerwear: 'Dış Giyim',
@@ -79,18 +88,21 @@ const WardrobePanel: React.FC<WardrobePanelProps> = ({
         if (isLoading || activeGarmentIds.includes(item.id)) return;
         setError(null);
         try {
-            // If the item was from an upload, its URL is a blob URL. We need to fetch it to create a file.
-            // If it was a default item, it's a regular URL. This handles both.
-            const file = await urlToFile(item.url, item.name);
             if (selectionMode === 'experimental') {
+                const persistableSource = item.url.startsWith('blob:')
+                  ? await fileToDataUrl(await urlToFile(item.url, item.name))
+                  : item.url;
                 onStageGarment({
                     id: item.id,
                     name: item.name,
                     category: activeCategory,
-                    source: file,
+                    source: persistableSource,
                 });
                 return;
             }
+            // If the item was from an upload, its URL is a blob URL. We need to fetch it to create a file.
+            // If it was a default item, it's a regular URL. This handles both.
+            const file = await urlToFile(item.url, item.name);
             onGarmentSelect(file, item);
         } catch (err) {
             const detailedError = `Failed to load wardrobe item. This is often a CORS issue. Check the developer console for details.`;
@@ -99,7 +111,7 @@ const WardrobePanel: React.FC<WardrobePanelProps> = ({
         }
     };
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
             if (!file.type.startsWith('image/')) {
@@ -115,11 +127,12 @@ const WardrobePanel: React.FC<WardrobePanelProps> = ({
                 isPinned: false,
             };
             if (selectionMode === 'experimental') {
+                const persistableSource = await fileToDataUrl(file);
                 onStageGarment({
                     id: customGarmentInfo.id,
                     name: customGarmentInfo.name,
                     category: activeCategory,
-                    source: file,
+                    source: persistableSource,
                 });
                 return;
             }

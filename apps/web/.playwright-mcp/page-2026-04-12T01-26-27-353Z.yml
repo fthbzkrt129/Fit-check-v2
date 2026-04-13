@@ -1,0 +1,6 @@
+- main [ref=e2]:
+  - generic [ref=e3]: "404"
+  - heading "Bu alan bulunamadı." [level=1] [ref=e4]
+  - paragraph [ref=e5]: İstediğiniz tenant alanı henüz hazır değil veya link artık geçerli değil. Root landing alanına dönüp tekrar deneyebilirsiniz.
+  - link "Landing sayfasına dön" [ref=e7] [cursor=pointer]:
+    - /url: /

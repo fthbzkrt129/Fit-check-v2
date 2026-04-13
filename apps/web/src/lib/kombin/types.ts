@@ -26,6 +26,7 @@ export interface OutfitLayer {
   poseSourceImageUrl?: string;
   poseImages: Record<string, string>; // Maps pose instruction to image URL
   category: GarmentCategory | 'base';
+  completedCategories?: GarmentCategory[];
   topLength?: TopLengthOption | null;
   dressLength?: DressLengthOption | null;
   outerwearLength?: OuterwearLengthOption | null;

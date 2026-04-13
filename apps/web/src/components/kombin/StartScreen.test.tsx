@@ -1,11 +1,12 @@
+import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import StartScreen from './StartScreen';
 
 const generateModelImageMock = vi.fn();
 
-vi.mock('../services/geminiService', () => ({
+vi.mock('@/lib/kombin/services/geminiService', () => ({
   generateModelImage: (...args: unknown[]) => generateModelImageMock(...args),
 }));
 
@@ -25,6 +26,7 @@ class MockFileReader {
 
 describe('StartScreen', () => {
   beforeEach(() => {
+    cleanup();
     vi.clearAllMocks();
     generateModelImageMock.mockResolvedValue('https://example.com/generated-model.png');
     vi.stubGlobal('FileReader', MockFileReader as unknown as typeof FileReader);
@@ -64,7 +66,9 @@ describe('StartScreen', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Proceed to Styling →' }));
 
-    expect(onModelFinalized).toHaveBeenCalledWith('https://example.com/generated-model.png');
+    await waitFor(() => {
+      expect(onModelFinalized).toHaveBeenCalledWith('https://example.com/generated-model.png', 'styling');
+    });
     expect(onExperimentalStyling).not.toHaveBeenCalled();
   });
 
@@ -87,6 +91,29 @@ describe('StartScreen', () => {
 
     fireEvent.click(modelSwapButton);
 
-    expect(onModelFinalized).toHaveBeenCalledWith('https://example.com/generated-model.png', 'modelSwap');
+    await waitFor(() => {
+      expect(onModelFinalized).toHaveBeenCalledWith('https://example.com/generated-model.png', 'modelSwap');
+    });
+  });
+
+  it('surfaces generation errors and keeps styling actions hidden', async () => {
+    generateModelImageMock.mockRejectedValueOnce(new Error('Unsupported image format.'));
+
+    render(
+      <StartScreen
+        onModelFinalized={vi.fn()}
+        onExperimentalStyling={vi.fn()}
+      />,
+    );
+
+    const input = document.querySelector('#image-upload-start') as HTMLInputElement;
+    const file = new File(['image'], 'model.png', { type: 'image/png' });
+
+    fireEvent.change(input, { target: { files: [file] } });
+
+    await screen.findByText('Failed to create model. Unsupported image format.');
+
+    expect(screen.queryByRole('button', { name: 'Proceed to Styling →' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Deneysel kombin giydir' })).toBeNull();
   });
 });

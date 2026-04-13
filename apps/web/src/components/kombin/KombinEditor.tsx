@@ -85,6 +85,18 @@ const useMediaQuery = (query: string): boolean => {
 const initialSession = loadSession();
 type ExperimentalSelectionMap = Partial<Record<GarmentCategory, ExperimentalGarmentSelection>>;
 
+const mergeWardrobeItems = (...groups: WardrobeItem[][]) => {
+  const itemsById = new Map<string, WardrobeItem>();
+
+  for (const group of groups) {
+    for (const item of group) {
+      itemsById.set(item.id, item);
+    }
+  }
+
+  return Array.from(itemsById.values());
+};
+
 const KombinEditor: React.FC = () => {
   const [modelImageUrl, setModelImageUrl] = useState<string | null>(null);
   const [outfitHistory, setOutfitHistory] = useState<OutfitLayer[]>([]);
@@ -96,12 +108,12 @@ const KombinEditor: React.FC = () => {
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [wardrobe, setWardrobe] = useState<WardrobeItem[]>(() => {
     const userItems = sanitizePersistedWardrobeItems(initialSession?.wardrobeUserItems ?? []);
-    return [...defaultWardrobe, ...getPinnedWardrobeItems(), ...userItems.filter(i => i.source === 'user')];
+    return mergeWardrobeItems(defaultWardrobe, getPinnedWardrobeItems(), userItems.filter(i => i.source === 'user'));
   });
   const [activeCategory, setActiveCategory] = useState<GarmentCategory>(initialSession?.activeCategory ?? 'top');
   const [selectedTopLength, setSelectedTopLength] = useState<TopLengthOption | null>(initialSession?.selectedTopLength ?? null);
-  const [selectedDressLength, setSelectedDressLength] = useState<DressLengthOption | null>(null);
-  const [selectedOuterwearLength, setSelectedOuterwearLength] = useState<OuterwearLengthOption | null>(null);
+  const [selectedDressLength, setSelectedDressLength] = useState<DressLengthOption | null>(initialSession?.selectedDressLength ?? null);
+  const [selectedOuterwearLength, setSelectedOuterwearLength] = useState<OuterwearLengthOption | null>(initialSession?.selectedOuterwearLength ?? null);
   const [selectedScene, setSelectedScene] = useState<SceneOption | null>(null);
   const [selectedLighting, setSelectedLighting] = useState<LightingOption | null>(null);
   const [sceneQualityMode, setSceneQualityMode] = useState<SceneQualityMode>('fast');
@@ -133,12 +145,21 @@ const KombinEditor: React.FC = () => {
       }
       if (restoredSession.pinnedWardrobe && restoredSession.pinnedWardrobe.length > 0) {
         setWardrobe(prev => {
-          const userItems = sanitizePersistedWardrobeItems(restoredSession.pinnedWardrobe || []);
-          return [...defaultWardrobe, ...getPinnedWardrobeItems(), ...userItems.filter(i => i.source === 'user')];
+          const restoredPinnedItems = sanitizePersistedWardrobeItems(restoredSession.pinnedWardrobe || []);
+          const existingUserItems = prev.filter((item) => item.source === 'user');
+          return mergeWardrobeItems(defaultWardrobe, getPinnedWardrobeItems(), existingUserItems, restoredPinnedItems.filter(i => i.source === 'user'));
         });
       }
       setActiveCategory(restoredSession.activeCategory);
       setSelectedTopLength(restoredSession.selectedTopLength);
+      setSelectedDressLength(restoredSession.selectedDressLength);
+      setSelectedOuterwearLength(restoredSession.selectedOuterwearLength);
+      setStylingMode(restoredSession.stylingMode);
+      setStagedExperimentalSelections(
+        Object.fromEntries(
+          (restoredSession.stagedExperimentalGarments ?? []).map((selection) => [selection.category, selection]),
+        ) as ExperimentalSelectionMap,
+      );
     }
   }, []);
 
@@ -146,6 +167,10 @@ const KombinEditor: React.FC = () => {
   useEffect(() => {
     if (modelImageUrl && outfitHistory.length > 0) {
       const pinnedItems = wardrobe.filter((item) => item.isPinned === true);
+      const persistableStagedExperimentalGarments = Object.values(stagedExperimentalSelections).filter(
+        (selection): selection is ExperimentalGarmentSelection & { source: string } =>
+          Boolean(selection) && typeof selection.source === 'string',
+      );
       const sessionState: SessionState = {
         modelImageUrl,
         outfitHistory,
@@ -155,10 +180,27 @@ const KombinEditor: React.FC = () => {
         pinnedWardrobe: pinnedItems,
         activeCategory,
         selectedTopLength,
+        selectedDressLength,
+        selectedOuterwearLength,
+        stylingMode,
+        stagedExperimentalGarments: persistableStagedExperimentalGarments,
       };
       saveSessionState(sessionState);
     }
-  }, [modelImageUrl, outfitHistory, currentOutfitIndex, currentPoseIndex, sceneVariations, wardrobe, activeCategory, selectedTopLength]);
+  }, [
+    modelImageUrl,
+    outfitHistory,
+    currentOutfitIndex,
+    currentPoseIndex,
+    sceneVariations,
+    wardrobe,
+    activeCategory,
+    selectedTopLength,
+    selectedDressLength,
+    selectedOuterwearLength,
+    stylingMode,
+    stagedExperimentalSelections,
+  ]);
 
   useEffect(() => {
     if (sessionSaveTimerRef.current) {
@@ -188,6 +230,8 @@ const KombinEditor: React.FC = () => {
         sceneVariations: smallSceneVariations,
         activeCategory,
         selectedTopLength,
+        selectedDressLength,
+        selectedOuterwearLength,
         wardrobeUserItems: userItems,
         outfitLayerMeta,
         hasModel: !!modelImageUrl,
@@ -221,7 +265,7 @@ const KombinEditor: React.FC = () => {
 
   const completedCategories = useMemo(() =>
     activeOutfitLayers
-      .map((layer) => layer.category)
+      .flatMap((layer) => layer.completedCategories ?? [layer.category])
       .filter((category): category is GarmentCategory => category !== 'base'),
     [activeOutfitLayers]
   );
@@ -279,6 +323,8 @@ const KombinEditor: React.FC = () => {
     setCurrentOutfitIndex(0);
     setActiveCategory('top');
     setSelectedTopLength(null);
+    setSelectedDressLength(null);
+    setSelectedOuterwearLength(null);
     setSelectedScene(null);
     setSelectedLighting(null);
     setSceneVariations([]);
@@ -287,6 +333,9 @@ const KombinEditor: React.FC = () => {
     setStagedExperimentalSelections({});
     setError(null);
     setLoadingMessage('');
+    if (pendingModelSwapPreviewUrl?.startsWith('blob:')) {
+      URL.revokeObjectURL(pendingModelSwapPreviewUrl);
+    }
     setPendingModelSwapFile(null);
     setPendingModelSwapPreviewUrl(null);
   };
@@ -300,6 +349,9 @@ const KombinEditor: React.FC = () => {
   };
 
   const handleStartOver = () => {
+    if (pendingModelSwapPreviewUrl?.startsWith('blob:')) {
+      URL.revokeObjectURL(pendingModelSwapPreviewUrl);
+    }
     clearSession();
     clearSessionData(); // Clear new session persistence (SESS-04)
     setModelImageUrl(null);
@@ -310,9 +362,11 @@ const KombinEditor: React.FC = () => {
     setError(null);
     setCurrentPoseIndex(0);
     setIsMobileDrawerOpen(false);
-    setWardrobe([...defaultWardrobe, ...getPinnedWardrobeItems()]);
+    setWardrobe(mergeWardrobeItems(defaultWardrobe, getPinnedWardrobeItems()));
     setActiveCategory('top');
     setSelectedTopLength(null);
+    setSelectedDressLength(null);
+    setSelectedOuterwearLength(null);
     setSelectedScene(null);
     setSelectedLighting(null);
     setSceneVariations([]);
@@ -333,10 +387,13 @@ const KombinEditor: React.FC = () => {
   }, []);
 
   const handleSelectModelSwapFile = useCallback((file: File) => {
+    if (pendingModelSwapPreviewUrl?.startsWith('blob:')) {
+      URL.revokeObjectURL(pendingModelSwapPreviewUrl);
+    }
     setPendingModelSwapFile(file);
     setPendingModelSwapPreviewUrl(URL.createObjectURL(file));
     setError(null);
-  }, []);
+  }, [pendingModelSwapPreviewUrl]);
 
   const handleApplyModelSwap = useCallback(async () => {
     if (!pendingModelSwapFile || isLoading) return;
@@ -374,6 +431,9 @@ const KombinEditor: React.FC = () => {
       setSelectedLighting(null);
       setSceneVariations([]);
       setSelectedSceneVariationId(null);
+      if (pendingModelSwapPreviewUrl?.startsWith('blob:')) {
+        URL.revokeObjectURL(pendingModelSwapPreviewUrl);
+      }
       setPendingModelSwapFile(null);
       setPendingModelSwapPreviewUrl(null);
       setWorkspaceMode('styling');
@@ -405,10 +465,28 @@ const KombinEditor: React.FC = () => {
 
     // Caching: Check if we are re-applying a previously generated layer
     const nextLayer = outfitHistory[currentOutfitIndex + 1];
-    if (nextLayer && nextLayer.garment?.id === garmentInfo.id) {
+    const reusesSameSelection =
+      nextLayer &&
+      nextLayer.garment?.id === garmentInfo.id &&
+      nextLayer.category === activeCategory &&
+      (activeCategory !== 'top' || nextLayer.topLength === selectedTopLength) &&
+      (activeCategory !== 'dress' || nextLayer.dressLength === selectedDressLength) &&
+      (activeCategory !== 'outerwear' || nextLayer.outerwearLength === selectedOuterwearLength);
+
+    if (reusesSameSelection) {
         setCurrentOutfitIndex(prev => prev + 1);
         setCurrentPoseIndex(0);
         setSelectedSceneVariationId(null);
+        setActiveCategory(getNextCategory(activeCategory));
+        if (activeCategory === 'top') {
+          setSelectedTopLength(null);
+        }
+        if (activeCategory === 'dress') {
+          setSelectedDressLength(null);
+        }
+        if (activeCategory === 'outerwear') {
+          setSelectedOuterwearLength(null);
+        }
         return;
     }
 
@@ -417,7 +495,14 @@ const KombinEditor: React.FC = () => {
     setLoadingMessage(`Adding ${garmentInfo.name}...`);
 
     try {
-      const newImageUrl = await generateVirtualTryOnImage(displayImageUrl, garmentFile, activeCategory, selectedTopLength, selectedDressLength, selectedOuterwearLength);
+      const newImageUrl = await generateVirtualTryOnImage(
+        displayImageUrl,
+        garmentFile,
+        activeCategory,
+        activeCategory === 'top' ? selectedTopLength : null,
+        activeCategory === 'dress' ? selectedDressLength : null,
+        activeCategory === 'outerwear' ? selectedOuterwearLength : null,
+      );
       const currentPoseInstruction = getPoseInstructionByIndex(currentPoseIndex);
 
       const newLayer: OutfitLayer = {
@@ -475,6 +560,18 @@ const KombinEditor: React.FC = () => {
       setActiveCategory(previousLayer.category);
       if (previousLayer.category === 'top') {
         setSelectedTopLength(previousLayer.topLength ?? null);
+        setSelectedDressLength(null);
+        setSelectedOuterwearLength(null);
+      }
+      if (previousLayer.category === 'dress') {
+        setSelectedDressLength(previousLayer.dressLength ?? null);
+        setSelectedTopLength(null);
+        setSelectedOuterwearLength(null);
+      }
+      if (previousLayer.category === 'outerwear') {
+        setSelectedOuterwearLength(previousLayer.outerwearLength ?? null);
+        setSelectedTopLength(null);
+        setSelectedDressLength(null);
       }
     }
   };
@@ -486,10 +583,10 @@ const KombinEditor: React.FC = () => {
     setCurrentPoseIndex(0);
     setSelectedSceneVariationId(null);
     if (nextLayer?.category && nextLayer.category !== 'base') {
-      setActiveCategory(nextLayer.category);
-      if (nextLayer.category === 'top') {
-        setSelectedTopLength(nextLayer.topLength ?? null);
-      }
+      setActiveCategory(getNextCategory(nextLayer.category));
+      setSelectedTopLength(null);
+      setSelectedDressLength(null);
+      setSelectedOuterwearLength(null);
     } else {
       const currentLayer = outfitHistory[currentOutfitIndex];
       setActiveCategory(getNextCategory(currentLayer?.category === 'base' ? 'top' : currentLayer?.category ?? 'top'));
@@ -541,15 +638,19 @@ const KombinEditor: React.FC = () => {
     setLoadingMessage('Deneysel kombin hazırlanıyor...');
 
     try {
+      const finalSceneDescription = [customScenePrompt ?? selectedScene, selectedLighting].filter(Boolean).join(' | ') || undefined;
+
       const generatedImageUrl = await generateExperimentalOutfitImage({
         baseModelImage: modelImageUrl,
         garmentSelections: stagedExperimentalGarments,
+        finalSceneDescription,
         onStatusUpdate: (message) => setLoadingMessage(message || 'Deneysel kombin hazırlanıyor...'),
       });
 
       const lastSelection = stagedExperimentalGarments[stagedExperimentalGarments.length - 1];
       const poseInstruction = getPoseInstructionByIndex(0);
       const layerName = stagedExperimentalGarments.map((selection) => selection.name).join(', ');
+      const completedBundleCategories = Array.from(new Set(stagedExperimentalGarments.map((selection) => selection.category)));
 
       const bundleLayer: OutfitLayer = {
         garment: {
@@ -561,6 +662,7 @@ const KombinEditor: React.FC = () => {
         },
         poseImages: { [poseInstruction]: generatedImageUrl },
         category: lastSelection.category,
+        completedCategories: completedBundleCategories,
       };
 
       setOutfitHistory((prevHistory) => {
@@ -570,7 +672,7 @@ const KombinEditor: React.FC = () => {
       setCurrentOutfitIndex((prev) => prev + 1);
       setCurrentPoseIndex(0);
       setSelectedSceneVariationId(null);
-      setActiveCategory(getNextCategory(lastSelection.category));
+      setActiveCategory(getNextCategory(completedBundleCategories[completedBundleCategories.length - 1] ?? lastSelection.category));
       setStylingMode('experimental');
     } catch (err) {
       console.error(err);
@@ -579,7 +681,7 @@ const KombinEditor: React.FC = () => {
       setIsLoading(false);
       setLoadingMessage('');
     }
-  }, [currentOutfitIndex, isLoading, modelImageUrl, stagedExperimentalGarments]);
+  }, [currentOutfitIndex, isLoading, modelImageUrl, stagedExperimentalGarments, selectedScene, selectedLighting, customScenePrompt, pendingModelSwapPreviewUrl]);
 
   const handlePinWardrobeItem = useCallback(async (item: WardrobeItem) => {
     if (item.source !== 'user' || item.isPinned) {
@@ -656,9 +758,22 @@ const KombinEditor: React.FC = () => {
   }, [currentPoseIndex, outfitHistory, isLoading, currentOutfitIndex, selectedSceneVariation]);
 
   const handleCategorySelect = useCallback((nextCategory: GarmentCategory) => {
+    if (
+      !isCategorySelectionAllowed(
+        activeCategory,
+        nextCategory,
+        selectedTopLength,
+        selectedDressLength,
+        selectedOuterwearLength,
+        completedCategories,
+      )
+    ) {
+      return;
+    }
+
     setError(null);
     setActiveCategory(nextCategory);
-  }, []);
+  }, [activeCategory, completedCategories, selectedTopLength, selectedDressLength, selectedOuterwearLength]);
 
   const handleSelectCustomScene = useCallback((customPrompt: string) => {
     setError(null);
