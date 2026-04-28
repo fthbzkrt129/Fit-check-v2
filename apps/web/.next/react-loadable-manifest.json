@@ -4,11 +4,5 @@
     "files": [
       "static/chunks/_app-pages-browser_node_modules_next_dist_client_dev_noop-turbopack-hmr_js.js"
     ]
-  },
-  "components\\kombin\\ui\\compare.tsx -> ./sparkles": {
-    "id": "components\\kombin\\ui\\compare.tsx -> ./sparkles",
-    "files": [
-      "static/chunks/_app-pages-browser_src_components_kombin_ui_sparkles_tsx.js"
-    ]
   }
 }
