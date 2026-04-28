@@ -5,6 +5,10 @@ const STORAGE_KEY = 'fit-check:pinned-wardrobe';
 const isPersistableWardrobeItem = (item: WardrobeItem) => item.url.startsWith('data:image/');
 
 export const getPinnedWardrobeItems = (): WardrobeItem[] => {
+  if (typeof localStorage === 'undefined') {
+    return [];
+  }
+
   const raw = localStorage.getItem(STORAGE_KEY);
   if (!raw) {
     return [];
@@ -18,6 +22,10 @@ export const getPinnedWardrobeItems = (): WardrobeItem[] => {
 };
 
 export const savePinnedWardrobeItems = (items: WardrobeItem[]) => {
+  if (typeof localStorage === 'undefined') {
+    return;
+  }
+
   localStorage.setItem(STORAGE_KEY, JSON.stringify(items.filter(isPersistableWardrobeItem)));
 };
 

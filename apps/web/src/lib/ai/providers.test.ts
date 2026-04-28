@@ -6,7 +6,7 @@ vi.mock("@/lib/env", () => ({
 
 import { getServerEnv } from "@/lib/env";
 
-import { __private__, generateVirtualTryOnImage } from "./providers/geminiServer";
+import { __private__, generateModelImage, generateVirtualTryOnImage } from "./providers/geminiServer";
 import { generateExperimentalOutfitImage } from "./providers/falServer";
 
 describe("ai providers", () => {
@@ -86,6 +86,37 @@ describe("ai providers", () => {
     expect(JSON.stringify(requestBody)).toContain('premium lifestyle glow');
   });
 
+  it('uses the fit-check full-body ecommerce model prompt for initial model generation', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        candidates: [
+          {
+            content: {
+              parts: [
+                {
+                  inlineData: {
+                    mimeType: 'image/png',
+                    data: 'model-image-bytes',
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      }),
+    });
+
+    await expect(generateModelImage('data:image/png;base64,base-model', fetchImpl as typeof fetch)).resolves.toBe(
+      'data:image/png;base64,model-image-bytes',
+    );
+
+    const requestBody = JSON.parse(fetchImpl.mock.calls[0]?.[1]?.body as string);
+    const requestPrompt = requestBody.contents[0].parts[1].text;
+
+    expect(requestPrompt).toBe("You are an expert fashion photographer AI. Transform the person in this image into a full-body fashion model photo suitable for an e-commerce website. The background must be a clean, neutral studio backdrop (light gray, #f0f0f0). The person should have a neutral, professional model expression. Preserve the person's identity, unique features, and body type, but place them in a standard, relaxed standing model pose. The final image must be photorealistic. Return ONLY the final image.");
+  });
+
   it("keeps bounded retry and normalized fal errors", async () => {
     const fetchImpl = vi
       .fn()
@@ -96,5 +127,24 @@ describe("ai providers", () => {
       "fal-image"
     );
     expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
+  it('extracts fal image urls from queued result payloads', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        data: {
+          images: [
+            {
+              url: 'https://fal.example/generated.png',
+            },
+          ],
+        },
+      }),
+    });
+
+    await expect(generateExperimentalOutfitImage({ prompt: 'x' }, fetchImpl as typeof fetch)).resolves.toBe(
+      'https://fal.example/generated.png',
+    );
   });
 });

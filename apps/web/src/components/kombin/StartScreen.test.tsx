@@ -116,4 +116,41 @@ describe('StartScreen', () => {
     expect(screen.queryByRole('button', { name: 'Proceed to Styling →' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Deneysel kombin giydir' })).toBeNull();
   });
+
+  it('keeps the preview shell stable while the model is still generating', async () => {
+    let resolveGeneration: ((value: string) => void) | undefined;
+    generateModelImageMock.mockImplementationOnce(
+      () =>
+        new Promise<string>((resolve) => {
+          resolveGeneration = resolve;
+        }),
+    );
+
+    render(
+      <StartScreen
+        onModelFinalized={vi.fn()}
+        onExperimentalStyling={vi.fn()}
+      />,
+    );
+
+    const input = document.querySelector('#image-upload-start') as HTMLInputElement;
+    const file = new File(['image'], 'model.png', { type: 'image/png' });
+
+    fireEvent.change(input, { target: { files: [file] } });
+
+    expect(await screen.findByText('Generating your model...')).toBeTruthy();
+
+    const previewShell = document.querySelector('[data-testid="start-screen-preview-shell"]');
+    const actionsContainer = screen.getByTestId('start-screen-actions');
+
+    expect(previewShell?.className).not.toContain('animate-pulse');
+    expect(actionsContainer).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Proceed to Styling →' })).toBeNull();
+
+    if (resolveGeneration) {
+      resolveGeneration('https://example.com/generated-model.png');
+    }
+
+    expect(await screen.findByRole('button', { name: 'Proceed to Styling →' })).toBeTruthy();
+  });
 });

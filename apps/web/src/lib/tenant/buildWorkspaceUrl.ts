@@ -20,6 +20,11 @@ export const isLocalRootDomain = (rootDomain: string) => {
   );
 };
 
+const isPathWorkspaceRootDomain = (rootDomain: string) => {
+  const hostname = stripPort(rootDomain).toLowerCase();
+  return hostname === "lvh.me" || hostname.endsWith(".vercel.app");
+};
+
 export const buildWorkspaceUrl = (
   workspaceSlug: string,
   rootDomain: string,
@@ -28,6 +33,10 @@ export const buildWorkspaceUrl = (
   const protocol = options.protocol ?? (isLocalRootDomain(rootDomain) ? "http" : "https");
   const pathname = options.pathname ? `/${trimSlashes(options.pathname)}` : "";
   const search = options.search ?? "";
+
+  if (workspaceSlug && isPathWorkspaceRootDomain(rootDomain)) {
+    return `${protocol}://${rootDomain}/workspace/${trimSlashes(workspaceSlug)}${pathname}${search}`;
+  }
 
   const domain = workspaceSlug ? `${workspaceSlug}.${rootDomain}` : rootDomain;
 

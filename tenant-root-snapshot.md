@@ -1,0 +1,61 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - navigation "Ana navigasyon" [ref=e3]:
+      - generic [ref=e4]:
+        - link "Virtulize ana sayfa" [ref=e5] [cursor=pointer]:
+          - /url: /
+          - text: Virtulize
+        - list [ref=e6]:
+          - listitem [ref=e7]
+          - listitem [ref=e9]
+          - listitem [ref=e11]
+        - generic [ref=e13]:
+          - link "Giriş yap" [ref=e14] [cursor=pointer]:
+            - /url: /login
+          - link "Başla" [ref=e15] [cursor=pointer]:
+            - /url: /login
+    - region "Hero" [ref=e16]:
+      - generic [ref=e17]:
+        - generic [ref=e18]:
+          - img [ref=e19]
+          - text: Phase 5 · Şu an aktif
+        - heading "AI-powered SaaS omurgası, güvenli ve çok kiracılı." [level=1] [ref=e21]:
+          - text: AI-powered SaaS omurgası,
+          - text: güvenli ve çok kiracılı.
+        - paragraph [ref=e22]: Mevcut styling deneyimini korurken AI anahtarlarını browser dışına taşıyan, tenant-aware ve Supabase-first yeni uygulama kabuğu.
+        - generic [ref=e23]:
+          - link "Uygulamayı aç" [ref=e24] [cursor=pointer]:
+            - /url: /login
+          - link "Dokümantasyon" [ref=e25] [cursor=pointer]:
+            - /url: https://docs.virtulize.dev
+    - region "Platform metrikleri" [ref=e26]:
+      - generic [ref=e28]:
+        - generic [ref=e29]:
+          - paragraph [ref=e30]: 100%
+          - paragraph [ref=e31]: Server-side AI işleme
+        - generic [ref=e32]:
+          - paragraph [ref=e33]: 0ms
+          - paragraph [ref=e34]: Browser'a sızan API anahtarı
+        - generic [ref=e35]:
+          - paragraph [ref=e36]: ∞
+          - paragraph [ref=e37]: Tenant izolasyon kapasitesi
+    - region "Güvenli, hızlı ve ölçeklenebilir." [ref=e38]:
+      - generic [ref=e39]:
+        - paragraph [ref=e40]: Platform pillars
+        - heading "Güvenli, hızlı ve ölçeklenebilir." [level=2] [ref=e41]
+        - list [ref=e42]:
+          - listitem [ref=e43]
+          - listitem [ref=e49]
+          - listitem [ref=e55]
+    - contentinfo "Site footer" [ref=e62]:
+      - generic [ref=e64]:
+        - generic [ref=e65]:
+          - paragraph [ref=e66]: Virtulize
+          - paragraph [ref=e67]: © 2025 Virtulize. Tüm hakları saklıdır.
+        - list [ref=e68]:
+          - listitem [ref=e69]
+          - listitem [ref=e71]
+          - listitem [ref=e73]
+  - button "Open Next.js Dev Tools" [ref=e80] [cursor=pointer]:
+    - img [ref=e81]
+  - alert [ref=e84]

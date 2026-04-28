@@ -1,0 +1,26 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e4]:
+      - generic [ref=e6]:
+        - heading "Create Your Model for Any Look." [level=1] [ref=e7]
+        - paragraph [ref=e8]: Ever wondered how an outfit would look on you? Stop guessing. Upload a photo and see for yourself. Our AI creates your personal model, ready to try on anything.
+        - separator [ref=e9]
+        - generic [ref=e10]:
+          - generic [ref=e11]:
+            - img [ref=e12]
+            - text: Upload Photo
+          - button "Upload Photo" [ref=e15]
+          - paragraph [ref=e16]: Select a clear, full-body photo. Face-only photos also work, but full-body is preferred for best results.
+          - paragraph [ref=e17]: By uploading, you agree not to create harmful, explicit, or unlawful content. This service is for creative and responsible use only.
+      - generic [ref=e19]:
+        - img [ref=e25]
+        - img "first image" [ref=e31]
+        - img "second image" [ref=e32]
+    - contentinfo [ref=e33]:
+      - generic [ref=e34]:
+        - paragraph [ref=e35]:
+          - text: Created by
+          - link "@ammaar" [ref=e36] [cursor=pointer]:
+            - /url: https://x.com/ammaar
+        - paragraph [ref=e38]: "Remix idea: Generate a shareable lookbook."
+  - alert [ref=e39]

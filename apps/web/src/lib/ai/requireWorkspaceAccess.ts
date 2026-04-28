@@ -6,7 +6,7 @@ type WorkspaceAccessResult = {
 };
 
 export const requireWorkspaceAccess = async (workspaceSlug: string): Promise<WorkspaceAccessResult> => {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient({ allowCookieWrites: false });
   const {
     data: { user }
   } = await supabase.auth.getUser();

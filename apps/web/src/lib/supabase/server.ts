@@ -10,7 +10,11 @@ type CookieMutation = {
   options?: Record<string, unknown>;
 };
 
-export const createSupabaseServerClient = async () => {
+type CreateSupabaseServerClientOptions = {
+  allowCookieWrites?: boolean;
+};
+
+export const createSupabaseServerClient = async ({ allowCookieWrites = true }: CreateSupabaseServerClientOptions = {}) => {
   const cookieStore = await cookies();
   const { supabaseUrl, supabaseAnonKey } = getSupabasePublicEnv();
 
@@ -21,8 +25,17 @@ export const createSupabaseServerClient = async () => {
         return cookieStore.getAll();
       },
       setAll(cookiesToSet: CookieMutation[]) {
+        if (!allowCookieWrites) {
+          return;
+        }
+
         cookiesToSet.forEach(({ name, value, options }) => {
-          cookieStore.set(name, value, options);
+          try {
+            cookieStore.set(name, value, options);
+          } catch {
+            // Server Components can read cookies but cannot write refreshed auth cookies.
+            // Route handlers and middleware still persist them when Next allows mutation.
+          }
         });
       }
     }

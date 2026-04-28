@@ -12,6 +12,40 @@ const normalizeFalError = (status: number, detail?: string) => {
   return new Error(detail || "fal.ai deneysel kombin istegi tamamlanamadi.");
 };
 
+const normalizeFalResult = (result: unknown): string => {
+  const payload = result as {
+    imageUrl?: unknown;
+    data?: {
+      images?: unknown[];
+      image?: unknown;
+    };
+  };
+  const firstImage = payload.data?.images?.[0] as { url?: unknown } | string | undefined;
+
+  if (typeof payload.imageUrl === "string") {
+    return payload.imageUrl;
+  }
+
+  if (typeof firstImage === "string") {
+    return firstImage;
+  }
+
+  if (typeof firstImage?.url === "string") {
+    return firstImage.url;
+  }
+
+  if (typeof payload.data?.image === "string") {
+    return payload.data.image;
+  }
+
+  const imageObject = payload.data?.image as { url?: unknown } | undefined;
+  if (typeof imageObject?.url === "string") {
+    return imageObject.url;
+  }
+
+  throw new Error("fal.ai sonucu gorsel dondurmedi.");
+};
+
 export const generateExperimentalOutfitImage = async (
   payload: Record<string, unknown>,
   fetchImpl: FetchLike = fetch
@@ -30,12 +64,7 @@ export const generateExperimentalOutfitImage = async (
     });
 
     if (response.ok) {
-      const data = (await response.json()) as { imageUrl?: string };
-      if (!data.imageUrl) {
-        throw new Error("fal.ai sonucu gorsel dondurmedi.");
-      }
-
-      return data.imageUrl;
+      return normalizeFalResult(await response.json());
     }
 
     if (attempt === 0 && [408, 409, 425, 429, 500, 502, 503, 504].includes(response.status)) {

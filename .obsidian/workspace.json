@@ -1,0 +1,231 @@
+{
+  "main": {
+    "id": "bee1138c9cc82b67",
+    "type": "split",
+    "children": [
+      {
+        "id": "52e822326f556219",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "dc0c5cffec62c633",
+            "type": "leaf",
+            "state": {
+              "type": "graph",
+              "state": {},
+              "icon": "lucide-git-fork",
+              "title": "Grafik Görünümü"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "63a2d96c6a0b699b",
+    "type": "split",
+    "children": [
+      {
+        "id": "7acbc9bb6750b6eb",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "7839c276b42df7df",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Dosya Gezgini"
+            }
+          },
+          {
+            "id": "2a7dc5258b783c40",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Ara"
+            }
+          },
+          {
+            "id": "abeaca01d8a0932c",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Yer İmleri"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "7bdaeb6080bac663",
+    "type": "split",
+    "children": [
+      {
+        "id": "3581c7626c688458",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "6af52c905434c011",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "node_modules/@tsparticles/slim/README.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "README için geri bağlantılar"
+            }
+          },
+          {
+            "id": "1f3560bf74e0c3f5",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "node_modules/@tsparticles/slim/README.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "README'dan giden bağlantılar"
+            }
+          },
+          {
+            "id": "a9bb2c7062c1ff78",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Etiketler"
+            }
+          },
+          {
+            "id": "3475046b984f9d02",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "Tüm özellikler"
+            }
+          },
+          {
+            "id": "1e86e25be3361123",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "node_modules/@tsparticles/slim/README.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "README ana hatları"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Hızlı geçişi aç": false,
+      "graph:Grafik görünümünü aç": false,
+      "canvas:Yeni tuval oluşturun": false,
+      "daily-notes:Bugünün Notunu Aç": false,
+      "templates:Şablon ekle": false,
+      "command-palette:Komut paletini aç": false,
+      "bases:Yeni taban oluştur": false
+    }
+  },
+  "active": "dc0c5cffec62c633",
+  "lastOpenFiles": [
+    "second-brain/wiki/sources/session-2026-04-11-brandvoice-wrapup.md",
+    "second-brain/raw/wrap-ups/wrap-up-2026-04-11-brandvoice.md",
+    "apps/web/README.md",
+    "apps/web/brandvoice.md",
+    "docs/brandvoice.md",
+    "second-brain/wiki/sources/session-2026-04-11-login-redesign-wrapup.md",
+    "second-brain/wiki/sources/2026-04-11-morning-focus-note.md",
+    "second-brain/wiki/sources/session-2026-04-11-wrap-up-pipeline-bootstrap-wrapup.md",
+    "second-brain/wiki/project/agents-and-memory-strategy.md",
+    "second-brain/raw/wrap-ups/wrap-up-2026-04-11-login-redesign.md",
+    "second-brain/raw/wrap-ups/wrap-up-2026-04-11-wrap-up-pipeline-bootstrap.md",
+    "second-brain/raw/journal/2026-04-11-morning-focus-note.md",
+    "second-brain/wiki/index.md",
+    "apps/web/DESIGN.md",
+    "apps/AGENTS.md",
+    "second-brain/wiki/themes/energy-and-consistency.md",
+    "apps/web/agents/erp-wiki-orchestrator.md",
+    "apps/web/agents/erp-wiki-normalizer.md",
+    "apps/web/agents/erp-wiki-ingestor.md",
+    "apps/web/agents/erp-runbook-extractor.md",
+    "apps/web/agents/erp-research-pipeline.md",
+    "apps/web/agents/erp-decision-capturer.md",
+    "apps/web/agents/erp-debug-orchestrator.md",
+    "apps/web/agents/erp-debug-investigator.md",
+    "apps/web/agents",
+    "node_modules/@tsparticles/slim/README.md",
+    "apps/web/node_modules/@supabase/supabase-js/src/lib/rest/types/common/common.ts",
+    "apps/web/node_modules/@supabase/supabase-js/src/lib/rest/types/common/rpc.ts",
+    "apps/web/node_modules/@supabase/supabase-js/src/lib/rest/types/common",
+    "apps/web/node_modules/@supabase/supabase-js/src/lib/rest/types",
+    "apps/web/node_modules/@supabase/supabase-js/dist/umd/supabase.js",
+    "apps/web/node_modules/@supabase/supabase-js/src/lib/types.ts",
+    "apps/web/node_modules/@supabase/supabase-js/src/lib/SupabaseAuthClient.ts",
+    "apps/web/node_modules/@supabase/supabase-js/src/lib/version.ts",
+    "apps/web/node_modules/@supabase/supabase-js/src/lib/rest",
+    "apps/web/node_modules/@supabase/supabase-js/README.md",
+    "Screenshot_20.jpg",
+    "Screenshot_19.jpg",
+    "Screenshot_18.jpg",
+    "Screenshot_17.jpg",
+    "Screenshot_16.jpg",
+    "Screenshot_15.jpg",
+    "Screenshot_14.jpg",
+    "Screenshot_13.jpg",
+    "Screenshot_12.jpg",
+    "Screenshot_11.jpg"
+  ]
+}

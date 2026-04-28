@@ -1,6 +1,6 @@
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { SessionState } from '@/lib/sessionPersistence';
 import type { SessionData } from '@/lib/kombin/sessionStorage';
 import type { WardrobeItem } from '@/lib/kombin/types';
@@ -15,6 +15,7 @@ const {
   restoreSessionStateMock,
   loadSessionMock,
   generateExperimentalOutfitImageMock,
+  canvasLoadingMessages,
 } = vi.hoisted(() => ({
   generateVirtualTryOnImageMock: vi.fn(),
   generateSceneVariationMock: vi.fn(),
@@ -25,6 +26,7 @@ const {
   restoreSessionStateMock: vi.fn<() => SessionState | null>(() => null),
   loadSessionMock: vi.fn<() => SessionData | null>(() => null),
   generateExperimentalOutfitImageMock: vi.fn(),
+  canvasLoadingMessages: [] as string[],
 }));
 
 vi.mock('@/lib/kombin/services/geminiService', () => ({
@@ -58,14 +60,19 @@ vi.mock('@/components/kombin/StartScreen', () => ({
 }));
 
 vi.mock('@/components/kombin/Canvas', () => ({
-  default: ({ displayImageUrl, onUndo, onRedo, onSelectPose }: { displayImageUrl: string | null; onUndo: () => void; onRedo: () => void; onSelectPose: (index: number) => void }) => (
-    <div>
-      <div data-testid="display-image">{displayImageUrl}</div>
-      <button onClick={onUndo}>Geri Al</button>
-      <button onClick={onRedo}>Yinele</button>
-      <button onClick={() => onSelectPose(1)}>pose-side</button>
-    </div>
-  ),
+  default: ({ displayImageUrl, loadingMessage, onUndo, onRedo, onSelectPose }: { displayImageUrl: string | null; loadingMessage?: string; onUndo: () => void; onRedo: () => void; onSelectPose: (index: number) => void }) => {
+    canvasLoadingMessages.push(loadingMessage ?? '');
+
+    return (
+      <div>
+        <div data-testid="display-image">{displayImageUrl}</div>
+        <div data-testid="canvas-loading-message">{loadingMessage ?? ''}</div>
+        <button onClick={onUndo}>Geri Al</button>
+        <button onClick={onRedo}>Yinele</button>
+        <button onClick={() => onSelectPose(1)}>pose-side</button>
+      </div>
+    );
+  },
 }));
 
 vi.mock('@/components/kombin/UndoRedoBar', () => ({ default: () => null }));
@@ -174,6 +181,7 @@ describe('KombinEditor', () => {
     generateIdentityReferenceImageMock.mockReset();
     generateModelSwapImageMock.mockReset();
     generateExperimentalOutfitImageMock.mockReset();
+    canvasLoadingMessages.length = 0;
     vi.stubGlobal('URL', {
       ...URL,
       createObjectURL: vi.fn(() => 'blob:preview-model-swap'),
@@ -361,6 +369,51 @@ describe('KombinEditor', () => {
 
     expect(generateExperimentalOutfitImageMock.mock.calls[0]?.[0]).toMatchObject({
       finalSceneDescription: expect.stringContaining('studio'),
+    });
+  });
+
+  it('keeps experimental loading stable while rapid status updates arrive', async () => {
+    let statusUpdate: ((message: string) => void) | undefined;
+    let resolveGeneration: ((url: string) => void) | undefined;
+    generateExperimentalOutfitImageMock.mockImplementationOnce(
+      ({ onStatusUpdate }: { onStatusUpdate?: (message: string) => void }) =>
+        new Promise<string>((resolve) => {
+          statusUpdate = onStatusUpdate;
+          resolveGeneration = resolve;
+        }),
+    );
+
+    render(<KombinEditor />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'experimental-entry' }));
+    await screen.findByTestId('display-image');
+
+    fireEvent.click(screen.getByRole('button', { name: 'pick-top' }));
+    fireEvent.click(screen.getByRole('button', { name: 'pick-bottom' }));
+    fireEvent.click(screen.getByRole('button', { name: /deneysel kombini üret/i }));
+
+    expect(screen.getByTestId('canvas-loading-message')).toHaveTextContent('Deneysel kombin hazırlanıyor...');
+
+    await act(async () => {
+      statusUpdate?.('Uploading garments...');
+      statusUpdate?.('Composing outfit...');
+      statusUpdate?.('Rendering final look...');
+    });
+
+    expect(screen.getByTestId('canvas-loading-message')).toHaveTextContent('Deneysel kombin hazırlanıyor...');
+    expect(canvasLoadingMessages).not.toContain('Uploading garments...');
+    expect(canvasLoadingMessages).not.toContain('Composing outfit...');
+
+    await waitFor(() => {
+      expect(screen.getByTestId('canvas-loading-message')).toHaveTextContent('Rendering final look...');
+    });
+
+    await act(async () => {
+      resolveGeneration?.('https://example.com/bundle-look.png');
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('display-image')).toHaveTextContent('https://example.com/bundle-look.png');
     });
   });
 

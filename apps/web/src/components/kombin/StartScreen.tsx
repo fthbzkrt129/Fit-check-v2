@@ -74,42 +74,42 @@ const StartScreen: React.FC<StartScreenProps> = ({ onModelFinalized, onExperimen
       {!userImageUrl ? (
         <motion.div
           key="uploader"
-          className="w-full max-w-7xl mx-auto flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-12"
+          className="start-screen"
           variants={screenVariants}
           initial="initial"
           animate="animate"
           exit="exit"
           transition={{ duration: 0.4, ease: "easeInOut" }}
         >
-          <div className="lg:w-1/2 flex flex-col items-center lg:items-start text-center lg:text-left">
-            <div className="max-w-lg">
-              <h1 className="text-5xl md:text-6xl font-serif font-bold text-gray-900 leading-tight">
+          <div className="start-screen__copy">
+            <div className="start-screen__copy-inner">
+              <h1 className="start-screen__title">
                 Create Your Model for Any Look.
               </h1>
-              <p className="mt-4 text-lg text-gray-600">
+              <p className="start-screen__lead">
                 Ever wondered how an outfit would look on you? Stop guessing. Upload a photo and see for yourself. Our AI creates your personal model, ready to try on anything.
               </p>
-              <hr className="my-8 border-gray-200" />
-               <div className="flex flex-col items-center lg:items-start w-full gap-3">
-                 <label htmlFor="image-upload-start" className="w-full relative flex items-center justify-center px-8 py-3 text-base font-semibold text-[#fcfbf8] bg-[#1c1c1c] rounded-md cursor-pointer transition-opacity duration-200 hover:opacity-80 focus:outline-none focus:shadow-lg" style={{
-                   boxShadow: 'rgba(255,255,255,0.2) 0px 0.5px 0px 0px inset, rgba(0,0,0,0.2) 0px 0px 0px 0.5px inset, rgba(0,0,0,0.05) 0px 1px 2px 0px'
-                 }}>
-                   <UploadCloudIcon className="w-5 h-5 mr-3" />
-                   Upload Photo
-                 </label>
-                 <input id="image-upload-start" type="file" className="hidden" accept="image/png, image/jpeg, image/webp, image/avif, image/heic, image/heif" onChange={handleFileChange} />
-                <p className="text-gray-500 text-sm">Select a clear, full-body photo. Face-only photos also work, but full-body is preferred for best results.</p>
-                <p className="text-gray-500 text-xs mt-1">By uploading, you agree not to create harmful, explicit, or unlawful content. This service is for creative and responsible use only.</p>
-                {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
+              <hr className="start-screen__rule" />
+               <div className="start-screen__actions">
+                 <label htmlFor="image-upload-start" className="start-screen__upload" style={{
+                    boxShadow: 'rgba(255,255,255,0.2) 0px 0.5px 0px 0px inset, rgba(0,0,0,0.2) 0px 0px 0px 0.5px inset, rgba(0,0,0,0.05) 0px 1px 2px 0px'
+                  }}>
+                    <UploadCloudIcon className="start-screen__upload-icon" />
+                    Upload Photo
+                  </label>
+                  <input id="image-upload-start" type="file" className="start-screen__file" accept="image/png, image/jpeg, image/webp, image/avif, image/heic, image/heif" onChange={handleFileChange} />
+                 <p className="start-screen__hint">Select a clear, full-body photo. Face-only photos also work, but full-body is preferred for best results.</p>
+                 <p className="start-screen__terms">By uploading, you agree not to create harmful, explicit, or unlawful content. This service is for creative and responsible use only.</p>
+                 {error && <p className="start-screen__error">{error}</p>}
               </div>
             </div>
           </div>
-          <div className="w-full lg:w-1/2 flex flex-col items-center justify-center">
+          <div className="start-screen__visual">
             <Compare
               firstImage={heroImage}
               secondImage={editedHeroImage}
               slideMode="drag"
-              className="w-full max-w-sm aspect-[2/3] rounded-2xl bg-gray-200"
+              className="start-screen__compare"
             />
           </div>
         </motion.div>
@@ -148,56 +148,59 @@ const StartScreen: React.FC<StartScreenProps> = ({ onModelFinalized, onExperimen
               </div>
             }
             
-            <AnimatePresence>
-              {generatedModelUrl && !isGenerating && !error && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  transition={{ duration: 0.5 }}
-                  className="flex flex-col sm:flex-row items-center gap-4 mt-8 w-full"
-                >
-                  {/* Proceed to Styling - Primary Dark Button */}
-                  <button
-                    onClick={() => onModelFinalized(generatedModelUrl, 'styling')}
-                    className="w-full sm:w-auto relative inline-flex items-center justify-center px-8 py-3 text-base font-semibold text-[#fcfbf8] bg-[#1c1c1c] rounded-md cursor-pointer transition-opacity duration-200 hover:opacity-80 focus:outline-none focus:shadow-lg"
-                    style={{
-                      boxShadow: 'rgba(255,255,255,0.2) 0px 0.5px 0px 0px inset, rgba(0,0,0,0.2) 0px 0px 0px 0.5px inset, rgba(0,0,0,0.05) 0px 1px 2px 0px'
-                    }}
+            <div data-testid="start-screen-actions" className="mt-8 min-h-[15rem] w-full">
+              <AnimatePresence>
+                {generatedModelUrl && !isGenerating && !error && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    transition={{ duration: 0.5 }}
+                    className="flex flex-col sm:flex-row items-center gap-4 w-full"
                   >
-                    Proceed to Styling →
-                  </button>
-                  
-                  {/* Deneysel kombin giydir - Ghost Button */}
-                  <button
-                    onClick={() => onExperimentalStyling(generatedModelUrl)}
-                    className="w-full sm:w-auto relative inline-flex items-center justify-center px-8 py-3 text-base font-semibold text-[#1c1c1c] bg-transparent border border-[rgba(28,28,28,0.4)] rounded-md cursor-pointer transition-opacity duration-200 hover:opacity-80 focus:outline-none focus:shadow-lg"
-                  >
-                    Deneysel kombin giydir
-                  </button>
-                  
-                  {/* Manken Değiştir - Cream Surface Button */}
-                  <button
-                    onClick={() => onModelFinalized(generatedModelUrl, 'modelSwap')}
-                    className="w-full sm:w-auto px-8 py-3 text-base font-semibold text-[#1c1c1c] bg-[#f7f4ed] rounded-md cursor-pointer border border-[#eceae4] transition-opacity duration-200 hover:opacity-80 focus:outline-none focus:shadow-lg"
-                  >
-                    Manken Değiştir
-                  </button>
+                   {/* Proceed to Styling - Primary Dark Button */}
+                    <button
+                      onClick={() => onModelFinalized(generatedModelUrl, 'styling')}
+                      className="w-full sm:w-auto relative inline-flex items-center justify-center px-8 py-3 text-base font-semibold text-[#fcfbf8] bg-[#1c1c1c] rounded-md cursor-pointer transition-opacity duration-200 hover:opacity-80 focus:outline-none focus:shadow-lg"
+                      style={{
+                        boxShadow: 'rgba(255,255,255,0.2) 0px 0.5px 0px 0px inset, rgba(0,0,0,0.2) 0px 0px 0px 0.5px inset, rgba(0,0,0,0.05) 0px 1px 2px 0px'
+                      }}
+                    >
+                      Proceed to Styling →
+                    </button>
+                    
+                    {/* Deneysel kombin giydir - Ghost Button */}
+                    <button
+                      onClick={() => onExperimentalStyling(generatedModelUrl)}
+                      className="w-full sm:w-auto relative inline-flex items-center justify-center px-8 py-3 text-base font-semibold text-[#1c1c1c] bg-transparent border border-[rgba(28,28,28,0.4)] rounded-md cursor-pointer transition-opacity duration-200 hover:opacity-80 focus:outline-none focus:shadow-lg"
+                    >
+                      Deneysel kombin giydir
+                    </button>
+                    
+                    {/* Manken Değiştir - Cream Surface Button */}
+                    <button
+                      onClick={() => onModelFinalized(generatedModelUrl, 'modelSwap')}
+                      className="w-full sm:w-auto px-8 py-3 text-base font-semibold text-[#1c1c1c] bg-[#f7f4ed] rounded-md cursor-pointer border border-[#eceae4] transition-opacity duration-200 hover:opacity-80 focus:outline-none focus:shadow-lg"
+                    >
+                      Manken Değiştir
+                    </button>
 
-                  {/* Use Different Photo - Secondary Action */}
-                  <button 
-                    onClick={reset}
-                    className="w-full sm:w-auto px-6 py-3 text-base font-semibold text-[#1c1c1c] bg-transparent border border-[#eceae4] rounded-md cursor-pointer transition-opacity duration-200 hover:opacity-80 focus:outline-none focus:shadow-lg"
-                  >
-                    Use Different Photo
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                    {/* Use Different Photo - Secondary Action */}
+                    <button 
+                      onClick={reset}
+                      className="w-full sm:w-auto px-6 py-3 text-base font-semibold text-[#1c1c1c] bg-transparent border border-[#eceae4] rounded-md cursor-pointer transition-opacity duration-200 hover:opacity-80 focus:outline-none focus:shadow-lg"
+                    >
+                      Use Different Photo
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
           <div className="md:w-1/2 w-full flex items-center justify-center">
-            <div 
-              className={`relative rounded-[1.25rem] transition-all duration-700 ease-in-out ${isGenerating ? 'border border-gray-300 animate-pulse' : 'border border-transparent'}`}
+            <div
+              data-testid="start-screen-preview-shell"
+              className={`relative rounded-[1.25rem] transition-all duration-300 ease-out ${isGenerating ? 'border border-gray-300 shadow-[0_12px_32px_rgba(15,23,42,0.08)]' : 'border border-transparent'}`}
             >
               <Compare
                 firstImage={userImageUrl}

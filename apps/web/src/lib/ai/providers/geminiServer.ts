@@ -86,7 +86,11 @@ const requestGeminiImage = async (
 };
 
 export const generateModelImage = async (userImage: string, fetchImpl?: FetchLike) =>
-  requestGeminiImage("generate-model", [userImage], fetchImpl);
+  requestGeminiImage(
+    "You are an expert fashion photographer AI. Transform the person in this image into a full-body fashion model photo suitable for an e-commerce website. The background must be a clean, neutral studio backdrop (light gray, #f0f0f0). The person should have a neutral, professional model expression. Preserve the person's identity, unique features, and body type, but place them in a standard, relaxed standing model pose. The final image must be photorealistic. Return ONLY the final image.",
+    [userImage],
+    fetchImpl,
+  );
 
 export const generateIdentityReferenceImage = async (userImage: string, fetchImpl?: FetchLike) =>
   requestGeminiImage(

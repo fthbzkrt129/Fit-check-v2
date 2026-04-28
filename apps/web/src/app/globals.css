@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* ─────────────────────────────────────────────
    VIRTULIZE — Design System
    Inspired by DESIGN.md (Lovable aesthetic)
@@ -87,6 +91,193 @@ img, svg {
    ───────────────────────────────────────────── */
 .shell {
   min-height: 100vh;
+}
+
+/* ─────────────────────────────────────────────
+   KOMBIN START SCREEN
+   ───────────────────────────────────────────── */
+.kombin-start-shell {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  overflow-x: hidden;
+  padding: 128px 20px 80px;
+  background: #f8fafc;
+}
+
+.start-screen {
+  width: min(1260px, 100%);
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 560px) minmax(320px, 430px);
+  align-items: center;
+  justify-content: center;
+  gap: 112px;
+}
+
+.start-screen__copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.start-screen__copy-inner {
+  width: 100%;
+  max-width: 560px;
+}
+
+.start-screen__title {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(3.25rem, 6vw, 5.1rem);
+  font-weight: 600;
+  line-height: 0.94;
+  letter-spacing: -0.055em;
+  color: #101827;
+}
+
+.start-screen__lead {
+  margin-top: 30px;
+  max-width: 540px;
+  color: #4b5563;
+  font-size: 1.18rem;
+  line-height: 1.48;
+  letter-spacing: -0.01em;
+}
+
+.start-screen__rule {
+  margin: 34px 0 32px;
+  border: 0;
+  border-top: 1px solid #e5e7eb;
+}
+
+.start-screen__actions {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.start-screen__upload {
+  position: relative;
+  min-height: 48px;
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 12px 32px;
+  border-radius: 6px;
+  background: #111827;
+  color: #fcfbf8;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.start-screen__upload:hover {
+  opacity: 0.86;
+}
+
+.start-screen__upload:active {
+  transform: translateY(1px);
+}
+
+.start-screen__upload-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.start-screen__file {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.start-screen__hint {
+  color: #6b7280;
+  font-size: 0.94rem;
+  line-height: 1.35;
+}
+
+.start-screen__terms {
+  margin-top: 2px;
+  color: #6b7280;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.start-screen__error {
+  margin-top: 8px;
+  color: #dc2626;
+  font-size: 0.9rem;
+}
+
+.start-screen__visual {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.start-screen__compare {
+  width: 360px !important;
+  height: 500px !important;
+  border-radius: 16px;
+  background: #e5e7eb;
+  box-shadow: 0 18px 60px rgba(15, 23, 42, 0.08);
+}
+
+.compare-root {
+  width: 400px;
+  height: 400px;
+  overflow: hidden;
+}
+
+@media (max-width: 900px) {
+  .kombin-start-shell {
+    padding-top: 72px;
+  }
+
+  .start-screen {
+    grid-template-columns: 1fr;
+    gap: 56px;
+  }
+
+  .start-screen__copy {
+    align-items: center;
+    text-align: center;
+  }
+
+  .start-screen__visual {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 520px) {
+  .kombin-start-shell {
+    padding: 48px 18px 64px;
+  }
+
+  .start-screen__title {
+    font-size: 3.15rem;
+  }
+
+  .start-screen__lead {
+    font-size: 1rem;
+  }
+
+  .start-screen__compare {
+    width: min(100%, 310px) !important;
+    height: 440px !important;
+  }
 }
 
 .container {

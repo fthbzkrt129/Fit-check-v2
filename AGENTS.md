@@ -1,3 +1,9 @@
+# Workspace defaults
+
+- Varsayilan calisma dizini ve kod dizini her zaman `C:\Users\anilt\Desktop\Virtulize\apps\web` kabul edilir.
+- Kodla ilgili bir gorevde once `apps/AGENTS.md`, sonra `apps/web/AGENTS.md`, sonra varsa `apps/web/CLAUDE.md` okunur ve o klasorun kurallari uygulanir.
+- Koku ilgilendiren genel hafiza, wiki veya Obsidian gorevlerinde kok ve `second-brain/` kurallari uygulanir; ancak kod degisikligi varsayilan olarak `apps/web` icinde yapilir.
+
 # context-mode — MANDATORY routing rules
 
 You have context-mode MCP tools available. These rules are NOT optional — they protect your context window from flooding. A single unrouted command can dump 56 KB into context and waste the entire session.

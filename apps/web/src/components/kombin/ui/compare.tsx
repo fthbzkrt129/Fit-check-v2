@@ -4,7 +4,7 @@
 */
 "use client";
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { SparklesCore } from "./sparkles";
+import dynamic from "next/dynamic";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { DotsVerticalIcon } from "../icons";
@@ -155,9 +155,10 @@ export const Compare = ({
   return (
     <div
       ref={sliderRef}
-      className={cn("w-[400px] h-[400px] overflow-hidden", className)}
+      className={cn("compare-root", className)}
       style={{
         position: "relative",
+        overflow: "hidden",
         cursor: slideMode === "drag" ? (isDragging ? "grabbing" : "grab") : "col-resize",
       }}
       onMouseMove={handleMouseMove}
@@ -198,7 +199,7 @@ export const Compare = ({
           )}
         </motion.div>
       </AnimatePresence>
-      <div className="overflow-hidden w-full h-full relative z-20 pointer-events-none">
+      <div style={{ position: "relative", zIndex: 20, width: "100%", height: "100%", overflow: "hidden", pointerEvents: "none" }}>
         <AnimatePresence initial={false}>
           {firstImage ? (
             <motion.div
@@ -208,6 +209,13 @@ export const Compare = ({
               )}
               style={{
                 clipPath: `inset(0 ${100 - sliderXPercent}% 0 0)`,
+                position: "absolute",
+                inset: 0,
+                zIndex: 20,
+                width: "100%",
+                height: "100%",
+                overflow: "hidden",
+                borderRadius: "inherit",
               }}
               transition={{ duration: 0 }}
             >
@@ -218,6 +226,16 @@ export const Compare = ({
                   "absolute inset-0  z-20 rounded-2xl shrink-0 w-full h-full select-none object-cover",
                   firstImageClassName
                 )}
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  zIndex: 20,
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  userSelect: "none",
+                  borderRadius: "inherit",
+                }}
                 draggable={false}
               />
             </motion.div>
@@ -234,6 +252,16 @@ export const Compare = ({
             )}
             alt="second image"
             src={secondImage}
+            style={{
+              position: "absolute",
+              inset: 0,
+              zIndex: 19,
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              userSelect: "none",
+              borderRadius: "inherit",
+            }}
             draggable={false}
           />
         ) : null}
@@ -242,4 +270,7 @@ export const Compare = ({
   );
 };
  
-const MemoizedSparklesCore = React.memo(SparklesCore);
+const MemoizedSparklesCore = dynamic(
+  () => import("./sparkles").then((module) => module.SparklesCore),
+  { ssr: false }
+);

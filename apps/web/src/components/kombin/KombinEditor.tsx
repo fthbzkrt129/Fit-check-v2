@@ -41,6 +41,8 @@ type WorkspaceMode = 'styling' | 'modelSwap';
 
 const POSE_INSTRUCTIONS = POSE_OPTIONS.map((pose) => pose.instruction);
 const POSE_LABELS = POSE_OPTIONS.map((pose) => pose.label);
+const EXPERIMENTAL_LOADING_MESSAGE = 'Deneysel kombin hazırlanıyor...';
+const EXPERIMENTAL_STATUS_UPDATE_DELAY_MS = 80;
 
 const getPoseInstructionByIndex = (index: number) => POSE_INSTRUCTIONS[index];
 const getPoseLabelByIndex = (index: number) => POSE_LABELS[index];
@@ -126,7 +128,54 @@ const KombinEditor: React.FC = () => {
   const [pendingModelSwapFile, setPendingModelSwapFile] = useState<File | null>(null);
   const [pendingModelSwapPreviewUrl, setPendingModelSwapPreviewUrl] = useState<string | null>(null);
   const sessionSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const experimentalStatusTimerRef = useRef<number | null>(null);
+  const experimentalPendingStatusRef = useRef('');
+  const experimentalLastStatusRef = useRef('');
   const isMobile = useMediaQuery('(max-width: 767px)');
+
+  const clearExperimentalStatusTimer = useCallback(() => {
+    if (experimentalStatusTimerRef.current) {
+      window.clearTimeout(experimentalStatusTimerRef.current);
+      experimentalStatusTimerRef.current = null;
+    }
+
+    experimentalPendingStatusRef.current = '';
+  }, []);
+
+  const resetExperimentalLoadingStatus = useCallback(() => {
+    clearExperimentalStatusTimer();
+    experimentalLastStatusRef.current = '';
+    setLoadingMessage('');
+  }, [clearExperimentalStatusTimer]);
+
+  const scheduleExperimentalLoadingStatus = useCallback((message: string) => {
+    const nextMessage = message.trim() || EXPERIMENTAL_LOADING_MESSAGE;
+
+    if (nextMessage === experimentalLastStatusRef.current) {
+      return;
+    }
+
+    experimentalPendingStatusRef.current = nextMessage;
+
+    if (experimentalStatusTimerRef.current) {
+      return;
+    }
+
+    experimentalStatusTimerRef.current = window.setTimeout(() => {
+      experimentalStatusTimerRef.current = null;
+      const pendingMessage = experimentalPendingStatusRef.current;
+      experimentalPendingStatusRef.current = '';
+
+      if (!pendingMessage || pendingMessage === experimentalLastStatusRef.current) {
+        return;
+      }
+
+      experimentalLastStatusRef.current = pendingMessage;
+      setLoadingMessage(pendingMessage);
+    }, EXPERIMENTAL_STATUS_UPDATE_DELAY_MS);
+  }, []);
+
+  useEffect(() => clearExperimentalStatusTimer, [clearExperimentalStatusTimer]);
 
   // Restore session state on mount (SESS-01, SESS-02, SESS-03)
   useEffect(() => {
@@ -635,7 +684,9 @@ const KombinEditor: React.FC = () => {
 
     setError(null);
     setIsLoading(true);
-    setLoadingMessage('Deneysel kombin hazırlanıyor...');
+    clearExperimentalStatusTimer();
+    experimentalLastStatusRef.current = EXPERIMENTAL_LOADING_MESSAGE;
+    setLoadingMessage(EXPERIMENTAL_LOADING_MESSAGE);
 
     try {
       const finalSceneDescription = [customScenePrompt ?? selectedScene, selectedLighting].filter(Boolean).join(' | ') || undefined;
@@ -644,7 +695,7 @@ const KombinEditor: React.FC = () => {
         baseModelImage: modelImageUrl,
         garmentSelections: stagedExperimentalGarments,
         finalSceneDescription,
-        onStatusUpdate: (message) => setLoadingMessage(message || 'Deneysel kombin hazırlanıyor...'),
+        onStatusUpdate: (message) => scheduleExperimentalLoadingStatus(message),
       });
 
       const lastSelection = stagedExperimentalGarments[stagedExperimentalGarments.length - 1];
@@ -679,9 +730,9 @@ const KombinEditor: React.FC = () => {
       setError('Deneysel kombin üretilemedi.');
     } finally {
       setIsLoading(false);
-      setLoadingMessage('');
+      resetExperimentalLoadingStatus();
     }
-  }, [currentOutfitIndex, isLoading, modelImageUrl, stagedExperimentalGarments, selectedScene, selectedLighting, customScenePrompt, pendingModelSwapPreviewUrl]);
+  }, [clearExperimentalStatusTimer, currentOutfitIndex, isLoading, modelImageUrl, stagedExperimentalGarments, selectedScene, selectedLighting, customScenePrompt, scheduleExperimentalLoadingStatus, resetExperimentalLoadingStatus, pendingModelSwapPreviewUrl]);
 
   const handlePinWardrobeItem = useCallback(async (item: WardrobeItem) => {
     if (item.source !== 'user' || item.isPinned) {
@@ -841,7 +892,7 @@ const KombinEditor: React.FC = () => {
         {!modelImageUrl ? (
           <motion.div
             key="start-screen"
-            className="w-screen min-h-screen flex items-start sm:items-center justify-center bg-gray-50 p-4 pb-20"
+            className="kombin-start-shell"
             variants={viewVariants}
             initial="initial"
             animate="animate"
