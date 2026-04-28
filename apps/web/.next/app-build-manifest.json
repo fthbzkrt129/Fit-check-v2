@@ -25,6 +25,16 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/auth/finish-signup/route.js"
+    ],
+    "/workspace/[workspaceSlug]/layout": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/workspace/[workspaceSlug]/layout.js"
+    ],
+    "/workspace/[workspaceSlug]/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/workspace/[workspaceSlug]/page.js"
     ]
   }
 }
