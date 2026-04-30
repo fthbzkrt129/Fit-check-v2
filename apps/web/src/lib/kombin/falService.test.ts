@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { __private__, generateExperimentalOutfitImage } from './services/falService';
+import { __private__, generateExperimentalOutfitImage, generateGptExperimentalOutfitImage, generateGptSceneVariation } from './services/falService';
 
 describe('falService', () => {
   beforeEach(() => {
@@ -61,6 +61,77 @@ describe('falService', () => {
     });
     expect(requestBody.prompt).toContain('Cream Blazer');
     expect(normalizeImageSource).toHaveBeenCalledTimes(2);
+  });
+
+  it('posts GPT Image 2 experimental payloads with the GPT provider flag', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ imageUrl: 'https://example.com/gpt-look.png' }),
+    });
+    const normalizeImageSource = vi
+      .fn()
+      .mockResolvedValueOnce('data:image/png;base64,model')
+      .mockResolvedValueOnce('data:image/png;base64,bottom');
+
+    await expect(
+      generateGptExperimentalOutfitImage(
+        {
+          baseModelImage: 'https://example.com/model.png',
+          garmentSelections: [
+            {
+              id: 'bottom-1',
+              name: 'Black Trousers',
+              category: 'bottom',
+              source: new File(['bottom'], 'bottom.png', { type: 'image/png' }),
+            },
+          ],
+        },
+        fetchImpl as typeof fetch,
+        normalizeImageSource,
+      ),
+    ).resolves.toBe('https://example.com/gpt-look.png');
+
+    const requestBody = JSON.parse(String(fetchImpl.mock.calls[0]?.[1]?.body));
+    expect(requestBody).toMatchObject({
+      provider: 'gpt-image-2',
+      imageInputs: ['data:image/png;base64,model', 'data:image/png;base64,bottom'],
+    });
+  });
+
+  it('posts GPT Image 2 scene payloads to the secure scene route with scene instructions', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ imageUrl: 'https://example.com/gpt-scene.png' }),
+    });
+    const normalizeBaseImage = vi.fn().mockResolvedValue('data:image/png;base64,look');
+
+    await expect(
+      generateGptSceneVariation(
+        'https://example.com/look.png',
+        'street',
+        'golden hour',
+        'pro',
+        'rooftop terrace',
+        fetchImpl as typeof fetch,
+        normalizeBaseImage,
+      ),
+    ).resolves.toBe('https://example.com/gpt-scene.png');
+
+    expect(fetchImpl).toHaveBeenCalledWith('/api/ai/scene', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        workspaceSlug: 'demo',
+        provider: 'gpt-image-2',
+        baseImage: 'data:image/png;base64,look',
+        scene: 'street',
+        lighting: 'golden hour',
+        mode: 'pro',
+        customPrompt: 'rooftop terrace',
+      }),
+    });
   });
 
   it('does not retry non-idempotent secure experimental failures automatically', async () => {

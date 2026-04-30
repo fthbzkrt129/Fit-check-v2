@@ -8,7 +8,7 @@ describe('CategoryStepPanel', () => {
     cleanup();
   });
 
-  it('keeps future categories locked until the current top step has a length', () => {
+  it('allows selecting any category before the current top step has a length', () => {
     const onSelectCategory = vi.fn();
     const onSelectTopLength = vi.fn();
 
@@ -29,19 +29,19 @@ describe('CategoryStepPanel', () => {
 
     expect(screen.getByText('Üst Giyim')).toBeInTheDocument();
     expect(screen.getByText('Alt Giyim')).toBeInTheDocument();
-    expect(screen.getByText('Adımları sırayla tamamlayın veya bitirdiğiniz kategoriye geri dönün.')).toBeInTheDocument();
+    expect(screen.getByText('İstediğiniz kategoriden başlayın; akış seçiminize göre devam eder.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Crop' })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Kalça' }));
     expect(onSelectTopLength).toHaveBeenCalledWith('hip');
 
     fireEvent.click(screen.getByRole('button', { name: 'Aksesuar' }));
-    expect(onSelectCategory).not.toHaveBeenCalled();
-    expect(screen.getByRole('button', { name: 'Alt Giyim' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Aksesuar' })).toBeDisabled();
+    expect(onSelectCategory).toHaveBeenCalledWith('accessory');
+    expect(screen.getByRole('button', { name: 'Alt Giyim' })).not.toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Aksesuar' })).not.toBeDisabled();
   });
 
-  it('unlocks the next category after top length selection and allows revisiting completed steps', () => {
+  it('keeps all categories selectable after top length selection and completed steps', () => {
     const onSelectCategory = vi.fn();
 
     render(
@@ -65,7 +65,7 @@ describe('CategoryStepPanel', () => {
 
     expect(footwearButton).not.toBeDisabled();
     expect(completedTopButton).not.toBeDisabled();
-    expect(accessoryButton).toBeDisabled();
+    expect(accessoryButton).not.toBeDisabled();
 
     fireEvent.click(footwearButton);
     fireEvent.click(completedTopButton);
@@ -73,11 +73,11 @@ describe('CategoryStepPanel', () => {
 
     expect(onSelectCategory).toHaveBeenCalledWith('footwear');
     expect(onSelectCategory).toHaveBeenCalledWith('top');
-    expect(onSelectCategory).not.toHaveBeenCalledWith('accessory');
-    expect(accessoryButton).toBeDisabled();
+    expect(onSelectCategory).toHaveBeenCalledWith('accessory');
+    expect(accessoryButton).not.toBeDisabled();
   });
 
-  it('keeps dress and outerwear future steps locked until their own lengths are selected', () => {
+  it('keeps categories selectable from dress and outerwear before their lengths are selected', () => {
     const onSelectCategory = vi.fn();
 
     const { rerender } = render(
@@ -95,7 +95,7 @@ describe('CategoryStepPanel', () => {
       />,
     );
 
-    expect(screen.getByRole('button', { name: 'Alt Giyim' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Alt Giyim' })).not.toBeDisabled();
 
     rerender(
       <CategoryStepPanel
@@ -112,6 +112,6 @@ describe('CategoryStepPanel', () => {
       />,
     );
 
-    expect(screen.getByRole('button', { name: 'Ayakkabı' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Ayakkabı' })).not.toBeDisabled();
   });
 });

@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
-import type { LightingOption, SceneOption, SceneQualityMode } from '@/lib/kombin/types';
+import type { LightingOption, SceneOption, SceneProvider, SceneQualityMode } from '@/lib/kombin/types';
 import CustomSceneModal from './CustomSceneModal';
 
 interface ScenePanelProps {
   selectedScene: SceneOption | null;
   selectedLighting: LightingOption | null;
   qualityMode: SceneQualityMode;
+  sceneProvider: SceneProvider;
   onSelectScene: (scene: SceneOption) => void;
   onSelectLighting: (lighting: LightingOption) => void;
   onChangeQualityMode: (mode: SceneQualityMode) => void;
+  onChangeSceneProvider: (provider: SceneProvider) => void;
   onSelectCustomScene: (customPrompt: string) => void;
   onGenerate: () => void;
   isLoading: boolean;
@@ -41,9 +43,11 @@ const ScenePanel: React.FC<ScenePanelProps> = ({
   selectedScene,
   selectedLighting,
   qualityMode,
+  sceneProvider,
   onSelectScene,
   onSelectLighting,
   onChangeQualityMode,
+  onChangeSceneProvider,
   onSelectCustomScene,
   onGenerate,
   isLoading,
@@ -51,8 +55,9 @@ const ScenePanel: React.FC<ScenePanelProps> = ({
   hasCustomScene = false,
 }) => {
   const [isCustomSceneModalOpen, setIsCustomSceneModalOpen] = useState(false);
-  const canGenerate = !disabled && !isLoading && !!selectedScene && !!selectedLighting;
-  const lightingDisabled = disabled || !selectedScene || isLoading;
+  const hasSceneDirection = !!selectedScene || hasCustomScene;
+  const canGenerate = !disabled && !isLoading && hasSceneDirection && !!selectedLighting;
+  const lightingDisabled = disabled || !hasSceneDirection || isLoading;
 
   const handleCustomSceneSubmit = (customPrompt: string) => {
     onSelectCustomScene(customPrompt);
@@ -86,6 +91,26 @@ const ScenePanel: React.FC<ScenePanelProps> = ({
           <p className="mt-2 text-xs text-gray-500">
             {qualityMode === 'fast' ? 'Fast: hızlı üretim' : 'Pro: daha sadık ve premium scene üretimi'}
           </p>
+        </div>
+
+        <div className="rounded-[8px] border border-black bg-white p-3 text-black shadow-[0_10px_24px_rgba(0,0,0,0.08)]">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="font-mono text-[11px] uppercase tracking-[0.54px] text-black/60">GPT Image 2</p>
+              <p className="mt-1 text-sm font-light tracking-[-0.14px]">Açıkken sahne üretimi Gemini yerine GPT ile yapılır.</p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={sceneProvider === 'gpt-image-2'}
+              onClick={() => onChangeSceneProvider(sceneProvider === 'gpt-image-2' ? 'gemini' : 'gpt-image-2')}
+              disabled={disabled || isLoading}
+              className={`relative h-7 w-12 rounded-full border border-black transition focus:outline focus:outline-2 focus:outline-dashed focus:outline-black disabled:cursor-not-allowed disabled:opacity-50 ${sceneProvider === 'gpt-image-2' ? 'bg-black' : 'bg-white'}`}
+            >
+              <span className={`absolute top-1 h-5 w-5 rounded-full border border-black bg-white transition-transform ${sceneProvider === 'gpt-image-2' ? 'translate-x-[21px]' : 'translate-x-1'}`} />
+              <span className="sr-only">GPT Image 2 ile sahne oluştur</span>
+            </button>
+          </div>
         </div>
 
         <div>

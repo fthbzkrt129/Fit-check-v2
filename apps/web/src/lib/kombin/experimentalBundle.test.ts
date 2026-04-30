@@ -19,7 +19,7 @@ const selections: ExperimentalGarmentSelection[] = [
 ];
 
 describe('experimentalBundle', () => {
-  it('keeps the base model as image 1 and garment refs starting at image 2', () => {
+  it('keeps the visible outfit as image 1 and garment refs starting at image 2', () => {
     const bundle = buildExperimentalBundleInput('https://example.com/model.png', selections);
 
     expect(bundle.imageInputs).toEqual([
@@ -51,15 +51,34 @@ describe('experimentalBundle', () => {
     ]);
   });
 
-  it('builds a balanced try-on prompt that preserves the model anchor and garment fidelity', () => {
+  it('builds a balanced try-on prompt that uses the visible outfit anchor and category rules', () => {
     const prompt = buildExperimentalBundlePrompt(selections, 'editorial rooftop at sunset');
 
-    expect(prompt).toContain('Image 1 is the base model photo');
+    expect(prompt).toContain('Image 1 is the current visible outfit/result image');
     expect(prompt).toContain('Use image 2 (Cream Blazer) as the exact top garment reference');
+    expect(prompt).toContain('replace only the upper-body garment');
     expect(prompt).toContain('Use image 3 (Brown Boots) as the exact footwear garment reference');
+    expect(prompt).toContain('replace only the footwear');
+    expect(prompt).toContain('If a garment reference matches a category already visible in image 1, replace that category instead of layering duplicates');
+    expect(prompt).toContain('If a garment reference introduces a new non-conflicting category, preserve the existing visible outfit pieces');
     expect(prompt).toContain('Preserve the garment color, fabric appearance, silhouette, proportions, pattern, and visible design details');
-    expect(prompt).toContain('Remove or replace any conflicting clothing already visible on the model');
     expect(prompt).toContain('editorial rooftop at sunset');
+  });
+
+  it('adds garment-specific detail instructions to the prompt', () => {
+    const prompt = buildExperimentalBundlePrompt([
+      {
+        id: 'bottom-1',
+        name: 'Black Trousers',
+        category: 'bottom',
+        source: 'https://example.com/bottom.png',
+        detailInstruction: 'Paçalarında birer cm yırtmaç olsun',
+      },
+    ]);
+
+    expect(prompt).toContain(
+      'Additional detail for image 2 (Black Trousers): Paçalarında birer cm yırtmaç olsun.',
+    );
   });
 
   it('rejects empty garment selections', () => {

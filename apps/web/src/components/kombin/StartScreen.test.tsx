@@ -49,51 +49,37 @@ describe('StartScreen', () => {
 
     fireEvent.change(input, { target: { files: [file] } });
 
-    await screen.findByRole('button', { name: 'Proceed to Styling →' });
+    await screen.findByRole('button', { name: 'Start Styling' });
 
     return { onModelFinalized, onExperimentalStyling };
   };
 
-  it('renders both styling entry buttons when a generated model exists', async () => {
+  it('renders only the experimental styling entry when a generated model exists', async () => {
     await generateModel();
 
-    expect(screen.getByRole('button', { name: 'Proceed to Styling →' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Deneysel kombin giydir' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Start Styling' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Proceed to Styling →' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Deneysel kombin giydir' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Manken Değiştir' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Use Different Photo' })).toBeNull();
   });
 
-  it('keeps the standard styling action isolated from the experimental callback', async () => {
-    const { onModelFinalized, onExperimentalStyling } = await generateModel();
+  it('uses design-system classes after a generated model exists', async () => {
+    await generateModel();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Proceed to Styling →' }));
-
-    await waitFor(() => {
-      expect(onModelFinalized).toHaveBeenCalledWith('https://example.com/generated-model.png', 'styling');
-    });
-    expect(onExperimentalStyling).not.toHaveBeenCalled();
+    expect(document.querySelector('.start-screen--result')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Start Styling' }).className).toContain('start-screen__action--primary');
   });
 
   it('calls the experimental callback with the same generated model URL', async () => {
     const { onModelFinalized, onExperimentalStyling } = await generateModel();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Deneysel kombin giydir' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start Styling' }));
 
     await waitFor(() => {
       expect(onExperimentalStyling).toHaveBeenCalledWith('https://example.com/generated-model.png');
     });
     expect(onModelFinalized).not.toHaveBeenCalled();
-  });
-
-  it('shows the model swap action and routes it through onModelFinalized', async () => {
-    const { onModelFinalized } = await generateModel();
-
-    const modelSwapButton = screen.getByRole('button', { name: 'Manken Değiştir' });
-    expect(modelSwapButton).toBeTruthy();
-
-    fireEvent.click(modelSwapButton);
-
-    await waitFor(() => {
-      expect(onModelFinalized).toHaveBeenCalledWith('https://example.com/generated-model.png', 'modelSwap');
-    });
   });
 
   it('surfaces generation errors and keeps styling actions hidden', async () => {
@@ -113,8 +99,7 @@ describe('StartScreen', () => {
 
     await screen.findByText('Failed to create model. Unsupported image format.');
 
-    expect(screen.queryByRole('button', { name: 'Proceed to Styling →' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Deneysel kombin giydir' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Start Styling' })).toBeNull();
   });
 
   it('keeps the preview shell stable while the model is still generating', async () => {
@@ -145,12 +130,12 @@ describe('StartScreen', () => {
 
     expect(previewShell?.className).not.toContain('animate-pulse');
     expect(actionsContainer).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Proceed to Styling →' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Start Styling' })).toBeNull();
 
     if (resolveGeneration) {
       resolveGeneration('https://example.com/generated-model.png');
     }
 
-    expect(await screen.findByRole('button', { name: 'Proceed to Styling →' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Start Styling' })).toBeTruthy();
   });
 });

@@ -16,8 +16,8 @@ import CategoryStepPanel from '@/components/kombin/CategoryStepPanel';
 import ScenePanel from '@/components/kombin/ScenePanel';
 import SceneVariationList from '@/components/kombin/SceneVariationList';
 import { generateIdentityReferenceImage, generateModelSwapImage, generateSceneVariation, generateVirtualTryOnImage, generatePoseVariation } from '@/lib/kombin/services/geminiService';
-import { generateExperimentalOutfitImage } from '@/lib/kombin/services/falService';
-import { ExperimentalGarmentSelection, GarmentCategory, DressLengthOption, OuterwearLengthOption, LightingOption, OutfitLayer, SceneOption, SceneQualityMode, SceneVariation, StylingMode, TopLengthOption, WardrobeItem } from '@/lib/kombin/types';
+import { generateExperimentalOutfitImage, generateGptExperimentalOutfitImage, generateGptSceneVariation } from '@/lib/kombin/services/falService';
+import { ExperimentalGarmentSelection, GarmentCategory, DressLengthOption, OuterwearLengthOption, LightingOption, OutfitLayer, SceneOption, SceneProvider, SceneQualityMode, SceneVariation, StylingMode, TopLengthOption, WardrobeItem } from '@/lib/kombin/types';
 import { ChevronDownIcon, ChevronUpIcon, ChevronLeftIcon, ChevronRightIcon } from '@/components/kombin/icons';
 import { defaultWardrobe } from '@/lib/kombin/wardrobe';
 import Footer from '@/components/kombin/Footer';
@@ -87,6 +87,15 @@ const useMediaQuery = (query: string): boolean => {
 const initialSession = loadSession();
 type ExperimentalSelectionMap = Partial<Record<GarmentCategory, ExperimentalGarmentSelection>>;
 
+const EXPERIMENTAL_DETAIL_PLACEHOLDERS: Record<GarmentCategory, string> = {
+  top: 'Omuz çizgisini keskin tut, belde hafif otursun',
+  outerwear: 'Truvakar kol gibi uygula',
+  dress: 'Etek ucunda hafif hareket ve temiz düşüş olsun',
+  bottom: 'Paçalarında birer cm yırtmaç olsun',
+  footwear: 'Burun formunu ve taban yüksekliğini koru',
+  accessory: 'Aksesuarı doğal ölçekte, tek parça olarak ekle',
+};
+
 const mergeWardrobeItems = (...groups: WardrobeItem[][]) => {
   const itemsById = new Map<string, WardrobeItem>();
 
@@ -119,10 +128,12 @@ const KombinEditor: React.FC = () => {
   const [selectedScene, setSelectedScene] = useState<SceneOption | null>(null);
   const [selectedLighting, setSelectedLighting] = useState<LightingOption | null>(null);
   const [sceneQualityMode, setSceneQualityMode] = useState<SceneQualityMode>('fast');
+  const [sceneProvider, setSceneProvider] = useState<SceneProvider>('gemini');
   const [sceneVariations, setSceneVariations] = useState<SceneVariation[]>(initialSession?.sceneVariations ?? []);
   const [selectedSceneVariationId, setSelectedSceneVariationId] = useState<string | null>(null);
   const [customScenePrompt, setCustomScenePrompt] = useState<string | null>(null);
   const [stylingMode, setStylingMode] = useState<StylingMode>('standard');
+  const [isExperimentalPanelOpen, setIsExperimentalPanelOpen] = useState(true);
   const [stagedExperimentalSelections, setStagedExperimentalSelections] = useState<ExperimentalSelectionMap>({});
   const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>('styling');
   const [pendingModelSwapFile, setPendingModelSwapFile] = useState<File | null>(null);
@@ -435,6 +446,34 @@ const KombinEditor: React.FC = () => {
     }));
   }, []);
 
+  const handleRemoveStagedGarment = useCallback((category: GarmentCategory) => {
+    setError(null);
+    setStagedExperimentalSelections((previous) => {
+      const nextSelections = { ...previous };
+      delete nextSelections[category];
+      return nextSelections;
+    });
+  }, []);
+
+  const handleExperimentalDetailChange = useCallback((category: GarmentCategory, detailInstruction: string) => {
+    setError(null);
+    setStagedExperimentalSelections((previous) => {
+      const selection = previous[category];
+
+      if (!selection) {
+        return previous;
+      }
+
+      return {
+        ...previous,
+        [category]: {
+          ...selection,
+          detailInstruction,
+        },
+      };
+    });
+  }, []);
+
   const handleSelectModelSwapFile = useCallback((file: File) => {
     if (pendingModelSwapPreviewUrl?.startsWith('blob:')) {
       URL.revokeObjectURL(pendingModelSwapPreviewUrl);
@@ -677,8 +716,8 @@ const KombinEditor: React.FC = () => {
     }
   }, [isLoading, outfitHistory, currentOutfitIndex, currentPoseIndex, displayImageUrl]);
 
-  const handleExperimentalGenerate = useCallback(async () => {
-    if (!modelImageUrl || isLoading || stagedExperimentalGarments.length === 0) {
+  const handleExperimentalGenerate = useCallback(async (generator = generateExperimentalOutfitImage) => {
+    if (!displayImageUrl || isLoading || stagedExperimentalGarments.length === 0) {
       return;
     }
 
@@ -691,8 +730,8 @@ const KombinEditor: React.FC = () => {
     try {
       const finalSceneDescription = [customScenePrompt ?? selectedScene, selectedLighting].filter(Boolean).join(' | ') || undefined;
 
-      const generatedImageUrl = await generateExperimentalOutfitImage({
-        baseModelImage: modelImageUrl,
+      const generatedImageUrl = await generator({
+        baseModelImage: displayImageUrl,
         garmentSelections: stagedExperimentalGarments,
         finalSceneDescription,
         onStatusUpdate: (message) => scheduleExperimentalLoadingStatus(message),
@@ -732,7 +771,7 @@ const KombinEditor: React.FC = () => {
       setIsLoading(false);
       resetExperimentalLoadingStatus();
     }
-  }, [clearExperimentalStatusTimer, currentOutfitIndex, isLoading, modelImageUrl, stagedExperimentalGarments, selectedScene, selectedLighting, customScenePrompt, scheduleExperimentalLoadingStatus, resetExperimentalLoadingStatus, pendingModelSwapPreviewUrl]);
+  }, [clearExperimentalStatusTimer, currentOutfitIndex, isLoading, displayImageUrl, stagedExperimentalGarments, selectedScene, selectedLighting, customScenePrompt, scheduleExperimentalLoadingStatus, resetExperimentalLoadingStatus]);
 
   const handlePinWardrobeItem = useCallback(async (item: WardrobeItem) => {
     if (item.source !== 'user' || item.isPinned) {
@@ -848,10 +887,11 @@ const KombinEditor: React.FC = () => {
 
     setError(null);
     setIsLoading(true);
-    setLoadingMessage('Generating scene variation...');
+    setLoadingMessage(sceneProvider === 'gpt-image-2' ? 'Generating GPT scene variation...' : 'Generating scene variation...');
 
     try {
-      const imageUrl = await generateSceneVariation(
+      const generateSceneImage = sceneProvider === 'gpt-image-2' ? generateGptSceneVariation : generateSceneVariation;
+      const imageUrl = await generateSceneImage(
         sceneBaseImageUrl, 
         selectedScene || 'studio', 
         selectedLighting, 
@@ -878,7 +918,7 @@ const KombinEditor: React.FC = () => {
       setIsLoading(false);
       setLoadingMessage('');
     }
-  }, [outfitHistory, currentOutfitIndex, currentPoseIndex, selectedScene, selectedLighting, customScenePrompt, isLoading, sceneQualityMode]);
+  }, [outfitHistory, currentOutfitIndex, currentPoseIndex, selectedScene, selectedLighting, customScenePrompt, isLoading, sceneQualityMode, sceneProvider]);
 
   const viewVariants = {
     initial: { opacity: 0, y: 15 },
@@ -887,7 +927,7 @@ const KombinEditor: React.FC = () => {
   };
 
   return (
-    <div className="font-sans">
+    <div className="kombin-app-root font-sans">
       <AnimatePresence mode="wait">
         {!modelImageUrl ? (
           <motion.div
@@ -904,15 +944,15 @@ const KombinEditor: React.FC = () => {
         ) : (
           <motion.div
             key="main-app"
-            className="relative flex flex-col h-screen bg-white overflow-hidden"
+            className="kombin-app-shell relative flex flex-col h-screen overflow-hidden"
             variants={viewVariants}
             initial="initial"
             animate="animate"
             exit="exit"
             transition={{ duration: 0.5, ease: 'easeInOut' }}
           >
-            <main className="flex-grow relative flex flex-col md:flex-row overflow-hidden">
-              <div className="w-full h-full flex-grow flex flex-col items-center justify-center bg-white pb-16 relative">
+            <main className="kombin-app-main flex-grow relative flex flex-col md:flex-row overflow-hidden">
+              <div className="kombin-canvas-stage w-full h-full flex-grow flex flex-col items-center justify-center pb-16 relative">
                 <div className="fixed inset-x-4 bottom-4 z-30 md:hidden">
                   <UndoRedoBar
                     canUndo={canUndo}
@@ -944,7 +984,7 @@ const KombinEditor: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setIsMobileDrawerOpen(true)}
-                    className="absolute top-4 right-4 md:hidden z-30 inline-flex items-center gap-2 rounded-full border border-gray-300/70 bg-white/80 px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm backdrop-blur-md transition-all hover:bg-white active:scale-95"
+                    className="kombin-panel-trigger absolute top-4 right-4 md:hidden z-30 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-all active:scale-95"
                     aria-label="Ayarlar panelini aç"
                   >
                     <ChevronLeftIcon className="h-4 w-4" />
@@ -963,7 +1003,7 @@ const KombinEditor: React.FC = () => {
               )}
 
               <aside
-                className={`fixed top-0 right-0 z-50 h-full w-[88vw] max-w-sm bg-white/95 backdrop-blur-xl flex flex-col border-l border-gray-200/70 shadow-2xl transition-transform duration-500 ease-in-out ${isMobileDrawerOpen ? 'translate-x-0' : 'translate-x-full'} md:absolute md:relative md:z-auto md:h-full md:w-full md:max-w-sm md:translate-x-0 md:flex-shrink-0 md:border-l md:border-gray-200/60 md:bg-white/80 md:shadow-none`}
+                className={`kombin-side-panel fixed top-0 right-0 z-50 h-full w-[88vw] max-w-sm backdrop-blur-xl flex flex-col shadow-2xl transition-transform duration-500 ease-in-out ${isMobileDrawerOpen ? 'translate-x-0' : 'translate-x-full'} md:absolute md:relative md:z-auto md:h-full md:w-full md:max-w-sm md:translate-x-0 md:flex-shrink-0 md:shadow-none`}
                 style={{ transitionProperty: 'transform' }}
               >
                   <div className="md:hidden flex items-center justify-between border-b border-gray-200/70 px-4 py-4">
@@ -1000,6 +1040,110 @@ const KombinEditor: React.FC = () => {
                       outfitHistory={activeOutfitLayers}
                       onRemoveLastGarment={handleUndo}
                     />
+                      {stylingMode === 'experimental' && (
+                        <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 text-sm text-emerald-900">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">Deneysel mod</p>
+                              <p className="mt-2 font-semibold">{stagedExperimentalGarments.length > 0 ? `${stagedExperimentalGarments.length} parça hazır` : 'Henüz parça seçilmedi'}</p>
+                              {isExperimentalPanelOpen && (
+                                <p className="mt-1 text-emerald-800">Parçaları sahnele, sonra tek seferde fal.ai isteği gönder.</p>
+                              )}
+                            </div>
+                            <div className="flex flex-col items-end gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setIsExperimentalPanelOpen((isOpen) => !isOpen)}
+                                className="rounded-full border border-emerald-300 px-3 py-1 text-xs font-semibold text-emerald-800 transition hover:bg-white"
+                              >
+                                {isExperimentalPanelOpen ? 'Deneysel modu kapat' : 'Deneysel modu aç'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setStylingMode('standard')}
+                                className="rounded-full border border-emerald-300 px-3 py-1 text-xs font-semibold text-emerald-800 transition hover:bg-white"
+                              >
+                                Standart moda dön
+                              </button>
+                            </div>
+                          </div>
+
+                          {isExperimentalPanelOpen && stagedExperimentalGarments.length > 0 && (
+                            <ul className="mt-3 space-y-3 text-black">
+                              {stagedExperimentalGarments.map((selection) => (
+                                 <li key={selection.category} className="rounded-[8px] border border-black bg-white px-3 py-3 shadow-[0_10px_24px_rgba(0,0,0,0.08)]">
+                                  <div className="flex items-center justify-between gap-3">
+                                    <span className="font-medium tracking-[-0.14px]">{selection.name}</span>
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-mono text-[11px] uppercase tracking-[0.54px] text-black/60">{selection.category}</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRemoveStagedGarment(selection.category)}
+                                        className="rounded-full border border-black bg-white px-3 py-1 text-xs font-semibold text-black transition hover:bg-black hover:text-white focus:outline focus:outline-2 focus:outline-dashed focus:outline-black disabled:cursor-not-allowed disabled:opacity-50"
+                                        aria-label={`${selection.name} ürününü sil`}
+                                        disabled={isLoading}
+                                      >
+                                        Sil
+                                      </button>
+                                    </div>
+                                  </div>
+                                  <label className="mt-3 block" htmlFor={`experimental-detail-${selection.category}`}>
+                                    <span className="font-mono text-[11px] uppercase tracking-[0.54px] text-black/60">Detay talimatı</span>
+                                    <textarea
+                                      id={`experimental-detail-${selection.category}`}
+                                      aria-label={`${selection.name} detay talimatı`}
+                                      value={selection.detailInstruction ?? ''}
+                                      onChange={(event) => handleExperimentalDetailChange(selection.category, event.target.value)}
+                                      placeholder={EXPERIMENTAL_DETAIL_PLACEHOLDERS[selection.category]}
+                                      disabled={isLoading}
+                                      rows={2}
+                                      className="mt-2 w-full resize-none rounded-[8px] border border-black/20 bg-white px-3 py-2 text-sm font-light leading-5 tracking-[-0.14px] text-black placeholder:text-black/35 transition focus:border-black focus:outline focus:outline-2 focus:outline-dashed focus:outline-black disabled:cursor-not-allowed disabled:opacity-50"
+                                    />
+                                  </label>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+
+                          {isExperimentalPanelOpen && <div className="mt-4 flex flex-col gap-3">
+                            {isLoading && loadingMessage && (
+                              <p className="rounded-xl bg-white/80 px-3 py-2 text-sm font-medium text-emerald-900">
+                                {loadingMessage}
+                             </p>
+                           )}
+                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                              <button
+                                type="button"
+                                onClick={() => void handleExperimentalGenerate()}
+                                disabled={isLoading || stagedExperimentalGarments.length === 0}
+                                className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-3 font-semibold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:bg-emerald-300"
+                              >
+                                Deneysel kombini üret
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => void handleExperimentalGenerate(generateGptExperimentalOutfitImage)}
+                                disabled={isLoading || stagedExperimentalGarments.length === 0}
+                                className="inline-flex items-center justify-center rounded-xl border border-emerald-400 bg-white px-4 py-3 font-semibold text-emerald-900 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
+                              >
+                                GPT ile üret
+                              </button>
+                            </div>
+                           {error && (
+                             <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-red-700">
+                               <p>{error}</p>
+                               <button
+                                 type="button"
+                                 onClick={() => void handleExperimentalGenerate()}
+                                 className="mt-2 text-sm font-semibold text-red-700 underline"
+                               >
+                                 Tekrar dene
+                                </button>
+                              </div>
+                            )}
+                          </div>}
+                        </div>
+                      )}
                      <CategoryStepPanel
                       activeCategory={activeCategory}
                       completedCategories={completedCategories}
@@ -1021,70 +1165,15 @@ const KombinEditor: React.FC = () => {
                       }}
                        isLoading={isLoading}
                      />
-                     {stylingMode === 'experimental' && (
-                       <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 text-sm text-emerald-900">
-                         <div className="flex items-start justify-between gap-3">
-                           <div>
-                             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">Deneysel mod</p>
-                             <p className="mt-2 font-semibold">{stagedExperimentalGarments.length > 0 ? `${stagedExperimentalGarments.length} parça hazır` : 'Henüz parça seçilmedi'}</p>
-                             <p className="mt-1 text-emerald-800">Parçaları sahnele, sonra tek seferde fal.ai isteği gönder.</p>
-                           </div>
-                           <button
-                             type="button"
-                             onClick={() => setStylingMode('standard')}
-                             className="rounded-full border border-emerald-300 px-3 py-1 text-xs font-semibold text-emerald-800 transition hover:bg-white"
-                           >
-                             Standart moda dön
-                           </button>
-                         </div>
-
-                         {stagedExperimentalGarments.length > 0 && (
-                           <ul className="mt-3 space-y-2 text-emerald-900">
-                             {stagedExperimentalGarments.map((selection) => (
-                               <li key={selection.category} className="flex items-center justify-between rounded-xl bg-white/80 px-3 py-2">
-                                 <span className="font-medium">{selection.name}</span>
-                                 <span className="text-xs uppercase tracking-[0.15em] text-emerald-700">{selection.category}</span>
-                               </li>
-                             ))}
-                           </ul>
-                         )}
-
-                         <div className="mt-4 flex flex-col gap-3">
-                           {isLoading && loadingMessage && (
-                             <p className="rounded-xl bg-white/80 px-3 py-2 text-sm font-medium text-emerald-900">
-                               {loadingMessage}
-                             </p>
-                           )}
-                           <button
-                             type="button"
-                             onClick={() => void handleExperimentalGenerate()}
-                             disabled={isLoading || stagedExperimentalGarments.length === 0}
-                             className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-3 font-semibold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:bg-emerald-300"
-                           >
-                             Deneysel kombini üret
-                           </button>
-                           {error && (
-                             <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-red-700">
-                               <p>{error}</p>
-                               <button
-                                 type="button"
-                                 onClick={() => void handleExperimentalGenerate()}
-                                 className="mt-2 text-sm font-semibold text-red-700 underline"
-                               >
-                                 Tekrar dene
-                               </button>
-                             </div>
-                           )}
-                         </div>
-                       </div>
-                     )}
-                     <ScenePanel
+                       <ScenePanel
                       selectedScene={selectedScene}
                       selectedLighting={selectedLighting}
                       qualityMode={sceneQualityMode}
+                      sceneProvider={sceneProvider}
                       onSelectScene={handleSelectScene}
                       onSelectLighting={setSelectedLighting}
                       onChangeQualityMode={setSceneQualityMode}
+                      onChangeSceneProvider={setSceneProvider}
                       onSelectCustomScene={handleSelectCustomScene}
                       onGenerate={handleGenerateScene}
                       isLoading={isLoading}

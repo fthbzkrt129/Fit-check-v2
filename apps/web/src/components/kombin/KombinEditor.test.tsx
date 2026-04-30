@@ -15,6 +15,8 @@ const {
   restoreSessionStateMock,
   loadSessionMock,
   generateExperimentalOutfitImageMock,
+  generateGptExperimentalOutfitImageMock,
+  generateGptSceneVariationMock,
   canvasLoadingMessages,
 } = vi.hoisted(() => ({
   generateVirtualTryOnImageMock: vi.fn(),
@@ -26,6 +28,8 @@ const {
   restoreSessionStateMock: vi.fn<() => SessionState | null>(() => null),
   loadSessionMock: vi.fn<() => SessionData | null>(() => null),
   generateExperimentalOutfitImageMock: vi.fn(),
+  generateGptExperimentalOutfitImageMock: vi.fn(),
+  generateGptSceneVariationMock: vi.fn(),
   canvasLoadingMessages: [] as string[],
 }));
 
@@ -40,6 +44,8 @@ vi.mock('@/lib/kombin/services/geminiService', () => ({
 
 vi.mock('@/lib/kombin/services/falService', () => ({
   generateExperimentalOutfitImage: (...args: unknown[]) => generateExperimentalOutfitImageMock(...args),
+  generateGptExperimentalOutfitImage: (...args: unknown[]) => generateGptExperimentalOutfitImageMock(...args),
+  generateGptSceneVariation: (...args: unknown[]) => generateGptSceneVariationMock(...args),
 }));
 
 vi.mock('@/lib/kombin/wardrobe', () => ({ defaultWardrobe: [] }));
@@ -78,10 +84,12 @@ vi.mock('@/components/kombin/Canvas', () => ({
 vi.mock('@/components/kombin/UndoRedoBar', () => ({ default: () => null }));
 vi.mock('@/components/kombin/OutfitStack', () => ({ default: () => <div>outfit-stack</div> }));
 vi.mock('@/components/kombin/ScenePanel', () => ({
-  default: ({ onSelectScene, onSelectLighting, onGenerate }: any) => (
+  default: ({ onSelectScene, onSelectLighting, onGenerate, sceneProvider, onChangeSceneProvider }: any) => (
     <div>
+      <div data-testid="scene-provider">{sceneProvider}</div>
       <button onClick={() => onSelectScene('studio')}>select-scene</button>
       <button onClick={() => onSelectLighting('golden hour')}>select-lighting</button>
+      <button onClick={() => onChangeSceneProvider('gpt-image-2')}>enable-gpt-scene</button>
       <button onClick={onGenerate}>generate-scene</button>
     </div>
   ),
@@ -181,6 +189,8 @@ describe('KombinEditor', () => {
     generateIdentityReferenceImageMock.mockReset();
     generateModelSwapImageMock.mockReset();
     generateExperimentalOutfitImageMock.mockReset();
+    generateGptExperimentalOutfitImageMock.mockReset();
+    generateGptSceneVariationMock.mockReset();
     canvasLoadingMessages.length = 0;
     vi.stubGlobal('URL', {
       ...URL,
@@ -350,6 +360,108 @@ describe('KombinEditor', () => {
     expect(screen.getByTestId('active-category')).not.toHaveTextContent('bottom');
   });
 
+  it('removes a staged experimental garment before generation', async () => {
+    generateExperimentalOutfitImageMock.mockResolvedValueOnce('https://example.com/bundle-look.png');
+
+    render(<KombinEditor />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'experimental-entry' }));
+    await screen.findByTestId('display-image');
+
+    fireEvent.click(screen.getByRole('button', { name: 'pick-top' }));
+    fireEvent.click(screen.getByRole('button', { name: 'pick-bottom' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Top One ürününü sil' }));
+    fireEvent.click(screen.getByRole('button', { name: /deneysel kombini üret/i }));
+
+    await waitFor(() => {
+      expect(generateExperimentalOutfitImageMock).toHaveBeenCalledTimes(1);
+    });
+
+    expect(generateExperimentalOutfitImageMock.mock.calls[0]?.[0]).toMatchObject({
+      garmentSelections: [
+        expect.objectContaining({
+          id: 'bottom-1',
+          category: 'bottom',
+        }),
+      ],
+    });
+  });
+
+  it('shows a collapsible experimental panel above the category flow without clearing staged garments', async () => {
+    render(<KombinEditor />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'experimental-entry' }));
+    await screen.findByTestId('display-image');
+
+    fireEvent.click(screen.getByRole('button', { name: 'pick-top' }));
+
+    const experimentalHeading = screen.getByText('Deneysel mod');
+    const categoryFlow = screen.getByTestId('active-category');
+    expect(Boolean(experimentalHeading.compareDocumentPosition(categoryFlow) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
+
+    fireEvent.click(screen.getByRole('button', { name: /deneysel modu kapat/i }));
+
+    expect(screen.getByText('1 parça hazır')).toBeInTheDocument();
+    expect(screen.queryByText('Top One')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /deneysel kombini üret/i })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /deneysel modu aç/i }));
+
+    expect(screen.getByText('Top One')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /deneysel kombini üret/i })).toBeEnabled();
+  });
+
+  it('generates the staged experimental bundle with GPT Image 2 from the side button', async () => {
+    generateGptExperimentalOutfitImageMock.mockResolvedValueOnce('https://example.com/gpt-bundle-look.png');
+
+    render(<KombinEditor />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'experimental-entry' }));
+    await screen.findByTestId('display-image');
+
+    fireEvent.click(screen.getByRole('button', { name: 'pick-bottom' }));
+    fireEvent.click(screen.getByRole('button', { name: /gpt ile üret/i }));
+
+    await waitFor(() => {
+      expect(generateGptExperimentalOutfitImageMock).toHaveBeenCalledTimes(1);
+    });
+
+    expect(generateExperimentalOutfitImageMock).not.toHaveBeenCalled();
+    expect(generateGptExperimentalOutfitImageMock.mock.calls[0]?.[0]).toMatchObject({
+      baseModelImage: 'https://example.com/model.png',
+      garmentSelections: [expect.objectContaining({ id: 'bottom-1', category: 'bottom' })],
+    });
+    expect(screen.getByTestId('display-image')).toHaveTextContent('https://example.com/gpt-bundle-look.png');
+  });
+
+  it('adds staged garment detail instructions before experimental generation', async () => {
+    generateExperimentalOutfitImageMock.mockResolvedValueOnce('https://example.com/detail-bundle-look.png');
+
+    render(<KombinEditor />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'experimental-entry' }));
+    await screen.findByTestId('display-image');
+
+    fireEvent.click(screen.getByRole('button', { name: 'pick-bottom' }));
+    fireEvent.change(screen.getByLabelText('Bottom One detay talimatı'), {
+      target: { value: 'Paçalarında birer cm yırtmaç olsun' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /deneysel kombini üret/i }));
+
+    await waitFor(() => {
+      expect(generateExperimentalOutfitImageMock).toHaveBeenCalledTimes(1);
+    });
+
+    expect(generateExperimentalOutfitImageMock.mock.calls[0]?.[0]).toMatchObject({
+      garmentSelections: [
+        expect.objectContaining({
+          id: 'bottom-1',
+          detailInstruction: 'Paçalarında birer cm yırtmaç olsun',
+        }),
+      ],
+    });
+  });
+
   it('forwards the selected scene description into the experimental bundled request', async () => {
     generateExperimentalOutfitImageMock.mockResolvedValueOnce('https://example.com/bundle-look.png');
 
@@ -369,6 +481,56 @@ describe('KombinEditor', () => {
 
     expect(generateExperimentalOutfitImageMock.mock.calls[0]?.[0]).toMatchObject({
       finalSceneDescription: expect.stringContaining('studio'),
+    });
+  });
+
+  it('uses the current visible outfit image as the experimental base image', async () => {
+    generateExperimentalOutfitImageMock.mockResolvedValueOnce('https://example.com/bundle-look.png');
+    restoreSessionStateMock.mockReturnValue({
+      modelImageUrl: 'https://example.com/model.png',
+      outfitHistory: [
+        {
+          garment: null,
+          category: 'base',
+          baseSourceImageUrl: 'https://example.com/model.png',
+          poseImages: { 'Full frontal view, hands on hips': 'https://example.com/model.png' },
+        },
+        {
+          garment: {
+            id: 'top-existing',
+            name: 'Existing Top',
+            url: 'https://example.com/look-top.png',
+            category: 'top',
+            source: 'user',
+          },
+          category: 'top',
+          poseImages: { 'Full frontal view, hands on hips': 'https://example.com/look-top.png' },
+        },
+      ],
+      currentOutfitIndex: 1,
+      currentPoseIndex: 0,
+      sceneVariations: [],
+      pinnedWardrobe: [],
+      activeCategory: 'bottom',
+      selectedTopLength: null,
+      selectedDressLength: null,
+      selectedOuterwearLength: null,
+      stylingMode: 'experimental',
+      stagedExperimentalGarments: [],
+    });
+
+    render(<KombinEditor />);
+
+    await screen.findByText('Deneysel mod');
+    fireEvent.click(screen.getByRole('button', { name: 'pick-top' }));
+    fireEvent.click(screen.getByRole('button', { name: /deneysel kombini üret/i }));
+
+    await waitFor(() => {
+      expect(generateExperimentalOutfitImageMock).toHaveBeenCalledTimes(1);
+    });
+
+    expect(generateExperimentalOutfitImageMock.mock.calls[0]?.[0]).toMatchObject({
+      baseModelImage: 'https://example.com/look-top.png',
     });
   });
 
@@ -475,6 +637,32 @@ describe('KombinEditor', () => {
 
     expect(screen.getByTestId('selected-scene-variation')).toHaveTextContent('none');
     expect(screen.getByTestId('display-image')).toHaveTextContent('https://example.com/model.png');
+  });
+
+  it('uses GPT Image 2 for scene generation when the scene provider toggle is enabled', async () => {
+    generateGptSceneVariationMock.mockResolvedValue('https://example.com/gpt-scene-look.png');
+
+    render(<KombinEditor />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'start-session' }));
+    await screen.findByTestId('display-image');
+
+    fireEvent.click(screen.getByRole('button', { name: 'select-scene' }));
+    fireEvent.click(screen.getByRole('button', { name: 'select-lighting' }));
+    fireEvent.click(screen.getByRole('button', { name: 'enable-gpt-scene' }));
+    fireEvent.click(screen.getByRole('button', { name: 'generate-scene' }));
+
+    await waitFor(() => {
+      expect(generateGptSceneVariationMock).toHaveBeenCalledWith(
+        'https://example.com/model.png',
+        'studio',
+        'golden hour',
+        'fast',
+        undefined,
+      );
+    });
+    expect(generateSceneVariationMock).not.toHaveBeenCalled();
+    expect(screen.getByTestId('display-image')).toHaveTextContent('https://example.com/gpt-scene-look.png');
   });
 
   it('uses the selected scene variation as the source when creating a new pose', async () => {

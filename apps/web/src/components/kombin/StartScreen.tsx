@@ -18,7 +18,7 @@ interface StartScreenProps {
   onModelFinalized: (modelUrl: string, target?: 'styling' | 'modelSwap') => void;
 }
 
-const StartScreen: React.FC<StartScreenProps> = ({ onModelFinalized, onExperimentalStyling }) => {
+const StartScreen: React.FC<StartScreenProps> = ({ onExperimentalStyling }) => {
   const [userImageUrl, setUserImageUrl] = useState<string | null>(null);
   const [generatedModelUrl, setGeneratedModelUrl] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -116,39 +116,40 @@ const StartScreen: React.FC<StartScreenProps> = ({ onModelFinalized, onExperimen
       ) : (
         <motion.div
           key="compare"
-          className="w-full max-w-6xl mx-auto h-full flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12"
+          className="start-screen start-screen--result"
           variants={screenVariants}
           initial="initial"
           animate="animate"
           exit="exit"
           transition={{ duration: 0.4, ease: "easeInOut" }}
         >
-          <div className="md:w-1/2 flex-shrink-0 flex flex-col items-center md:items-start">
-            <div className="text-center md:text-left">
-              <h1 className="text-4xl md:text-5xl font-serif font-bold text-gray-900 leading-tight">
+          <div className="start-screen__result-copy">
+            <div className="start-screen__result-heading">
+              <p className="start-screen__label">Generated model</p>
+              <h1 className="start-screen__title start-screen__title--result">
                 The New You
               </h1>
-              <p className="mt-2 text-md text-gray-600">
+              <p className="start-screen__lead start-screen__lead--result">
                 Drag the slider to see your transformation.
               </p>
             </div>
             
             {isGenerating && (
-              <div className="flex items-center gap-3 text-lg text-gray-700 font-serif mt-6">
+              <div className="start-screen__status">
                 <Spinner />
                 <span>Generating your model...</span>
               </div>
             )}
 
             {error && 
-              <div className="text-center md:text-left text-red-600 max-w-md mt-6">
-                <p className="font-semibold">Generation Failed</p>
-                <p className="text-sm mb-4">{error}</p>
-                <button onClick={reset} className="text-sm font-semibold text-gray-700 hover:underline">Try Again</button>
+              <div className="start-screen__error-card">
+                <p className="start-screen__error-title">Generation Failed</p>
+                <p>{error}</p>
+                <button onClick={reset} className="start-screen__link-button">Try Again</button>
               </div>
             }
             
-            <div data-testid="start-screen-actions" className="mt-8 min-h-[15rem] w-full">
+            <div data-testid="start-screen-actions" className="start-screen__result-actions">
               <AnimatePresence>
                 {generatedModelUrl && !isGenerating && !error && (
                   <motion.div
@@ -156,57 +157,29 @@ const StartScreen: React.FC<StartScreenProps> = ({ onModelFinalized, onExperimen
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 10 }}
                     transition={{ duration: 0.5 }}
-                    className="flex flex-col sm:flex-row items-center gap-4 w-full"
+                    className="start-screen__action-grid"
                   >
-                   {/* Proceed to Styling - Primary Dark Button */}
-                    <button
-                      onClick={() => onModelFinalized(generatedModelUrl, 'styling')}
-                      className="w-full sm:w-auto relative inline-flex items-center justify-center px-8 py-3 text-base font-semibold text-[#fcfbf8] bg-[#1c1c1c] rounded-md cursor-pointer transition-opacity duration-200 hover:opacity-80 focus:outline-none focus:shadow-lg"
-                      style={{
-                        boxShadow: 'rgba(255,255,255,0.2) 0px 0.5px 0px 0px inset, rgba(0,0,0,0.2) 0px 0px 0px 0.5px inset, rgba(0,0,0,0.05) 0px 1px 2px 0px'
-                      }}
-                    >
-                      Proceed to Styling →
-                    </button>
-                    
-                    {/* Deneysel kombin giydir - Ghost Button */}
                     <button
                       onClick={() => onExperimentalStyling(generatedModelUrl)}
-                      className="w-full sm:w-auto relative inline-flex items-center justify-center px-8 py-3 text-base font-semibold text-[#1c1c1c] bg-transparent border border-[rgba(28,28,28,0.4)] rounded-md cursor-pointer transition-opacity duration-200 hover:opacity-80 focus:outline-none focus:shadow-lg"
+                      className="start-screen__action start-screen__action--primary"
                     >
-                      Deneysel kombin giydir
-                    </button>
-                    
-                    {/* Manken Değiştir - Cream Surface Button */}
-                    <button
-                      onClick={() => onModelFinalized(generatedModelUrl, 'modelSwap')}
-                      className="w-full sm:w-auto px-8 py-3 text-base font-semibold text-[#1c1c1c] bg-[#f7f4ed] rounded-md cursor-pointer border border-[#eceae4] transition-opacity duration-200 hover:opacity-80 focus:outline-none focus:shadow-lg"
-                    >
-                      Manken Değiştir
-                    </button>
-
-                    {/* Use Different Photo - Secondary Action */}
-                    <button 
-                      onClick={reset}
-                      className="w-full sm:w-auto px-6 py-3 text-base font-semibold text-[#1c1c1c] bg-transparent border border-[#eceae4] rounded-md cursor-pointer transition-opacity duration-200 hover:opacity-80 focus:outline-none focus:shadow-lg"
-                    >
-                      Use Different Photo
+                      Start Styling
                     </button>
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
           </div>
-          <div className="md:w-1/2 w-full flex items-center justify-center">
+          <div className="start-screen__result-visual">
             <div
               data-testid="start-screen-preview-shell"
-              className={`relative rounded-[1.25rem] transition-all duration-300 ease-out ${isGenerating ? 'border border-gray-300 shadow-[0_12px_32px_rgba(15,23,42,0.08)]' : 'border border-transparent'}`}
+              className="start-screen__preview-shell"
             >
               <Compare
                 firstImage={userImageUrl}
                 secondImage={generatedModelUrl ?? userImageUrl}
                 slideMode="drag"
-                className="w-[280px] h-[420px] sm:w-[320px] sm:h-[480px] lg:w-[400px] lg:h-[600px] rounded-2xl bg-gray-200"
+                className="start-screen__compare start-screen__compare--result"
               />
             </div>
           </div>

@@ -1,21 +1,22 @@
 import { buildExperimentalBundleInput } from '@/lib/kombin/experimentalBundle';
-import { imageUrlToDataUrl, blobToDataUrl } from '@/lib/kombin/imagePersistence';
+import { ensureMinimumImageAreaDataUrl, imageUrlToDataUrl, blobToDataUrl } from '@/lib/kombin/imagePersistence';
 import { aiSuccessSchema } from '@/lib/ai/contracts';
-import type { ExperimentalGarmentSelection, ExperimentalImageSource } from '@/lib/kombin/types';
+import type { ExperimentalGarmentSelection, ExperimentalImageSource, LightingOption, SceneOption, SceneQualityMode } from '@/lib/kombin/types';
 
 type ExperimentalGenerationRequest = {
   baseModelImage: ExperimentalImageSource;
   garmentSelections: ExperimentalGarmentSelection[];
   finalSceneDescription?: string;
   onStatusUpdate?: (message: string) => void;
+  provider?: 'wan' | 'gpt-image-2';
 };
 
 const normalizeImageSource = async (source: ExperimentalImageSource) => {
-  if (typeof source === 'string') {
-    return imageUrlToDataUrl(source);
-  }
+  const dataUrl = typeof source === 'string'
+    ? await imageUrlToDataUrl(source)
+    : await blobToDataUrl(source);
 
-  return blobToDataUrl(source);
+  return ensureMinimumImageAreaDataUrl(dataUrl);
 };
 
 const resolveWorkspaceSlug = (locationLike: Pick<Location, 'pathname' | 'hostname'> | null | undefined): string => {
@@ -54,6 +55,7 @@ const buildExperimentalRequestPayload = async (
 
   return {
     workspaceSlug,
+    provider: request.provider ?? 'wan',
     baseModelImage: imageInputs[0],
     imageInputs,
     garments: bundle.garments.map(({ id, name, category, imageIndex }) => ({
@@ -98,6 +100,51 @@ export const generateExperimentalOutfitImage = async (
   normalizeSource: (source: ExperimentalImageSource) => Promise<string> = normalizeImageSource,
 ): Promise<string> => {
   return requestExperimentalImage(request, fetchImpl, normalizeSource);
+};
+
+export const generateGptExperimentalOutfitImage = async (
+  request: Omit<ExperimentalGenerationRequest, 'provider'>,
+  fetchImpl: typeof fetch = fetch,
+  normalizeSource: (source: ExperimentalImageSource) => Promise<string> = normalizeImageSource,
+): Promise<string> => {
+  return requestExperimentalImage({ ...request, provider: 'gpt-image-2' }, fetchImpl, normalizeSource);
+};
+
+export const generateGptSceneVariation = async (
+  baseImageUrl: string,
+  scene: SceneOption,
+  lighting: LightingOption,
+  mode: SceneQualityMode = 'fast',
+  customPrompt?: string,
+  fetchImpl: typeof fetch = fetch,
+  normalizeBaseImage: (imageUrl: string) => Promise<string> = imageUrlToDataUrl,
+): Promise<string> => {
+  const workspaceSlug = resolveWorkspaceSlug(typeof window === 'undefined' ? null : window.location);
+  const response = await fetchImpl('/api/ai/scene', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      workspaceSlug,
+      provider: 'gpt-image-2',
+      baseImage: await normalizeBaseImage(baseImageUrl),
+      scene,
+      lighting,
+      mode,
+      customPrompt,
+    }),
+  });
+
+  if (!response.ok) {
+    const message = (await response.text()).trim();
+    throw Object.assign(new Error(message || 'GPT sahne uretilemedi.'), {
+      status: response.status,
+    });
+  }
+
+  const body = aiSuccessSchema.parse(await response.json());
+  return body.imageUrl;
 };
 
 export const __private__ = {

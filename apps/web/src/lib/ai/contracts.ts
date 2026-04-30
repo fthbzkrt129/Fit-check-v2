@@ -85,6 +85,7 @@ export const poseRequestSchema = z.object({
 
 export const sceneRequestSchema = z.object({
   workspaceSlug: z.string().trim().min(1),
+  provider: z.enum(['gemini', 'gpt-image-2']).default('gemini'),
   baseImage: imageSourceSchema,
   scene: z.enum(["studio", "cafe", "street", "luxury room"]),
   lighting: z.enum(["soft daylight", "golden hour", "dramatic", "editorial"]),
@@ -94,6 +95,7 @@ export const sceneRequestSchema = z.object({
 
 export const experimentalRequestSchema = z.object({
   workspaceSlug: z.string().trim().min(1),
+  provider: z.enum(['wan', 'gpt-image-2']).default('wan'),
   baseModelImage: imageSourceSchema,
   imageInputs: z.array(imageSourceSchema).min(1),
   garments: z

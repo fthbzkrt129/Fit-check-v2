@@ -36,7 +36,7 @@ const CategoryStepPanel: React.FC<CategoryStepPanelProps> = ({
     <div className="flex flex-col gap-4 border-t border-gray-400/50 pt-6">
       <div>
         <h2 className="text-xl font-serif tracking-wider text-gray-800">Kombin Akışı</h2>
-        <p className="mt-1 text-sm text-gray-500">Adımları sırayla tamamlayın veya bitirdiğiniz kategoriye geri dönün.</p>
+        <p className="mt-1 text-sm text-gray-500">İstediğiniz kategoriden başlayın; akış seçiminize göre devam eder.</p>
       </div>
 
       <div className="grid grid-cols-2 gap-2">

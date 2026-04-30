@@ -1,7 +1,9 @@
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import ScenePanel from './ScenePanel';
+
+afterEach(cleanup);
 
 describe('ScenePanel', () => {
   it('keeps generate button disabled until scene and lighting are selected', () => {
@@ -16,10 +18,12 @@ describe('ScenePanel', () => {
         selectedScene={null}
         selectedLighting={null}
         qualityMode="fast"
+        sceneProvider="gemini"
         onSelectScene={onSelectScene}
         onSelectLighting={onSelectLighting}
         onSelectCustomScene={onSelectCustomScene}
         onChangeQualityMode={onChangeQualityMode}
+        onChangeSceneProvider={vi.fn()}
         onGenerate={onGenerate}
         isLoading={false}
         disabled={false}
@@ -36,10 +40,12 @@ describe('ScenePanel', () => {
         selectedScene="studio"
         selectedLighting={null}
         qualityMode="fast"
+        sceneProvider="gemini"
         onSelectScene={onSelectScene}
         onSelectLighting={onSelectLighting}
         onSelectCustomScene={onSelectCustomScene}
         onChangeQualityMode={onChangeQualityMode}
+        onChangeSceneProvider={vi.fn()}
         onGenerate={onGenerate}
         isLoading={false}
         disabled={false}
@@ -56,16 +62,43 @@ describe('ScenePanel', () => {
         selectedScene="studio"
         selectedLighting="golden hour"
         qualityMode="fast"
+        sceneProvider="gemini"
         onSelectScene={onSelectScene}
         onSelectLighting={onSelectLighting}
         onSelectCustomScene={onSelectCustomScene}
         onChangeQualityMode={onChangeQualityMode}
+        onChangeSceneProvider={vi.fn()}
         onGenerate={onGenerate}
         isLoading={false}
         disabled={false}
       />
     );
 
+    expect(screen.getByRole('button', { name: 'Sahne Oluştur' })).toBeEnabled();
+  });
+
+  it('allows lighting and generation when a custom scene is selected without a preset scene', () => {
+    const onSelectLighting = vi.fn();
+
+    render(
+      <ScenePanel
+        selectedScene={null}
+        selectedLighting="editorial"
+        qualityMode="fast"
+        sceneProvider="gpt-image-2"
+        onSelectScene={vi.fn()}
+        onSelectLighting={onSelectLighting}
+        onSelectCustomScene={vi.fn()}
+        onChangeQualityMode={vi.fn()}
+        onChangeSceneProvider={vi.fn()}
+        onGenerate={vi.fn()}
+        isLoading={false}
+        disabled={false}
+        hasCustomScene
+      />
+    );
+
+    expect(screen.getByRole('button', { name: 'Golden Hour' })).toBeEnabled();
     expect(screen.getByRole('button', { name: 'Sahne Oluştur' })).toBeEnabled();
   });
 });

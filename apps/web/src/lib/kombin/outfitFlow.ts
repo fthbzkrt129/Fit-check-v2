@@ -18,46 +18,14 @@ export const getNextCategory = (category: GarmentCategory): GarmentCategory => {
 };
 
 export const isCategorySelectionAllowed = (
-  activeCategory: GarmentCategory,
-  nextCategory: GarmentCategory,
-  selectedTopLength: TopLengthOption | null,
-  selectedDressLength: DressLengthOption | null,
-  selectedOuterwearLength: OuterwearLengthOption | null,
-  completedCategories: GarmentCategory[] = [],
+  _activeCategory: GarmentCategory,
+  _nextCategory: GarmentCategory,
+  _selectedTopLength: TopLengthOption | null,
+  _selectedDressLength: DressLengthOption | null,
+  _selectedOuterwearLength: OuterwearLengthOption | null,
+  _completedCategories: GarmentCategory[] = [],
 ): boolean => {
-  if (nextCategory === activeCategory) {
-    return true;
-  }
-
-  if (completedCategories.includes(nextCategory)) {
-    return true;
-  }
-
-  if (activeCategory === 'top' && !selectedTopLength) {
-    return false;
-  }
-
-  if (activeCategory === 'dress' && !selectedDressLength) {
-    return false;
-  }
-
-  if (activeCategory === 'outerwear' && !selectedOuterwearLength) {
-    return false;
-  }
-
-  if (activeCategory === 'top') {
-    return nextCategory === 'outerwear' || nextCategory === 'bottom' || nextCategory === 'dress';
-  }
-
-  if (activeCategory === 'outerwear') {
-    return nextCategory === 'bottom';
-  }
-
-  if (activeCategory === 'dress') {
-    return nextCategory === 'footwear';
-  }
-
-  return getNextCategory(activeCategory) === nextCategory;
+  return true;
 };
 
 export const CATEGORY_LABELS: Record<GarmentCategory, string> = {

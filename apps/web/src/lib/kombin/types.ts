@@ -36,6 +36,7 @@ export type SceneOption = 'studio' | 'cafe' | 'street' | 'luxury room';
 
 export type LightingOption = 'soft daylight' | 'golden hour' | 'dramatic' | 'editorial';
 export type SceneQualityMode = 'fast' | 'pro';
+export type SceneProvider = 'gemini' | 'gpt-image-2';
 
 export interface SceneVariation {
   id: string;
@@ -58,6 +59,7 @@ export interface ExperimentalGarmentSelection {
   name: string;
   category: GarmentCategory;
   source: ExperimentalImageSource;
+  detailInstruction?: string;
 }
 
 export interface ExperimentalBundleGarment extends ExperimentalGarmentSelection {

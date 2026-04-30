@@ -1,6 +1,1 @@
-{
-  "/auth/finish-signup/route": "app/auth/finish-signup/route.js",
-  "/(marketing)/page": "app/(marketing)/page.js",
-  "/login/page": "app/login/page.js",
-  "/workspace/[workspaceSlug]/page": "app/workspace/[workspaceSlug]/page.js"
-}
+{}
