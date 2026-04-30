@@ -15,8 +15,8 @@ import OutfitStack from '@/components/kombin/OutfitStack';
 import CategoryStepPanel from '@/components/kombin/CategoryStepPanel';
 import ScenePanel from '@/components/kombin/ScenePanel';
 import SceneVariationList from '@/components/kombin/SceneVariationList';
-import { generateIdentityReferenceImage, generateModelSwapImage, generateSceneVariation, generateVirtualTryOnImage, generatePoseVariation } from '@/lib/kombin/services/geminiService';
-import { generateExperimentalOutfitImage } from '@/lib/kombin/services/falService';
+import { generateIdentityReferenceImage, generateModelSwapImage, generateVirtualTryOnImage, generatePoseVariation } from '@/lib/kombin/services/geminiService';
+import { generateExperimentalOutfitImage, generateGptExperimentalOutfitImage, generateGptSceneVariation } from '@/lib/kombin/services/falService';
 import { ExperimentalGarmentSelection, GarmentCategory, DressLengthOption, OuterwearLengthOption, LightingOption, OutfitLayer, SceneOption, SceneQualityMode, SceneVariation, StylingMode, TopLengthOption, WardrobeItem } from '@/lib/kombin/types';
 import { ChevronDownIcon, ChevronUpIcon, ChevronLeftIcon, ChevronRightIcon } from '@/components/kombin/icons';
 import { defaultWardrobe } from '@/lib/kombin/wardrobe';
@@ -677,7 +677,7 @@ const KombinEditor: React.FC = () => {
     }
   }, [isLoading, outfitHistory, currentOutfitIndex, currentPoseIndex, displayImageUrl]);
 
-  const handleExperimentalGenerate = useCallback(async () => {
+  const handleExperimentalGenerate = useCallback(async (generateOutfitImage: typeof generateExperimentalOutfitImage) => {
     if (!modelImageUrl || isLoading || stagedExperimentalGarments.length === 0) {
       return;
     }
@@ -691,7 +691,7 @@ const KombinEditor: React.FC = () => {
     try {
       const finalSceneDescription = [customScenePrompt ?? selectedScene, selectedLighting].filter(Boolean).join(' | ') || undefined;
 
-      const generatedImageUrl = await generateExperimentalOutfitImage({
+      const generatedImageUrl = await generateOutfitImage({
         baseModelImage: modelImageUrl,
         garmentSelections: stagedExperimentalGarments,
         finalSceneDescription,
@@ -848,10 +848,10 @@ const KombinEditor: React.FC = () => {
 
     setError(null);
     setIsLoading(true);
-    setLoadingMessage('Generating scene variation...');
+    setLoadingMessage('Generating GPT scene variation...');
 
     try {
-      const imageUrl = await generateSceneVariation(
+      const imageUrl = await generateGptSceneVariation(
         sceneBaseImageUrl, 
         selectedScene || 'studio', 
         selectedLighting, 
@@ -963,7 +963,7 @@ const KombinEditor: React.FC = () => {
               )}
 
               <aside
-                className={`fixed top-0 right-0 z-50 h-full w-[88vw] max-w-sm bg-white/95 backdrop-blur-xl flex flex-col border-l border-gray-200/70 shadow-2xl transition-transform duration-500 ease-in-out ${isMobileDrawerOpen ? 'translate-x-0' : 'translate-x-full'} md:absolute md:relative md:z-auto md:h-full md:w-full md:max-w-sm md:translate-x-0 md:flex-shrink-0 md:border-l md:border-gray-200/60 md:bg-white/80 md:shadow-none`}
+                className={`kombin-side-panel fixed top-0 right-0 z-50 h-full w-[88vw] max-w-sm bg-white/95 backdrop-blur-xl flex flex-col border-l border-gray-200/70 shadow-2xl transition-transform duration-500 ease-in-out ${isMobileDrawerOpen ? 'translate-x-0' : 'translate-x-full'} md:absolute md:relative md:z-auto md:h-full md:w-full md:max-w-sm md:translate-x-0 md:flex-shrink-0 md:border-l md:border-gray-200/60 md:bg-white/80 md:shadow-none`}
                 style={{ transitionProperty: 'transform' }}
               >
                   <div className="md:hidden flex items-center justify-between border-b border-gray-200/70 px-4 py-4">
@@ -1000,7 +1000,64 @@ const KombinEditor: React.FC = () => {
                       outfitHistory={activeOutfitLayers}
                       onRemoveLastGarment={handleUndo}
                     />
-                     <CategoryStepPanel
+                    {stylingMode === 'experimental' && (
+                      <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 text-sm text-emerald-900">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">Deneysel mod</p>
+                            <p className="mt-2 font-semibold">{stagedExperimentalGarments.length > 0 ? `${stagedExperimentalGarments.length} parça hazır` : 'Henüz parça seçilmedi'}</p>
+                            <p className="mt-1 text-emerald-800">Parçaları sahnele, sonra tek seferde fal.ai isteği gönder.</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setStylingMode('standard')}
+                            className="rounded-full border border-emerald-300 px-3 py-1 text-xs font-semibold text-emerald-800 transition hover:bg-white"
+                          >
+                            Standart moda dön
+                          </button>
+                        </div>
+
+                        {stagedExperimentalGarments.length > 0 && (
+                          <ul className="mt-3 space-y-2 text-emerald-900">
+                            {stagedExperimentalGarments.map((selection) => (
+                              <li key={selection.category} className="flex items-center justify-between rounded-xl bg-white/80 px-3 py-2">
+                                <span className="font-medium">{selection.name}</span>
+                                <span className="text-xs uppercase tracking-[0.15em] text-emerald-700">{selection.category}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+
+                        <div className="mt-4 flex flex-col gap-3">
+                          {isLoading && loadingMessage && (
+                            <p className="rounded-xl bg-white/80 px-3 py-2 text-sm font-medium text-emerald-900">
+                              {loadingMessage}
+                            </p>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => void handleExperimentalGenerate(generateGptExperimentalOutfitImage)}
+                            disabled={isLoading || stagedExperimentalGarments.length === 0}
+                            className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-3 font-semibold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:bg-emerald-300"
+                          >
+                            Üret
+                          </button>
+                          {error && (
+                            <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-red-700">
+                              <p>{error}</p>
+                              <button
+                                type="button"
+                                onClick={() => void handleExperimentalGenerate(generateGptExperimentalOutfitImage)}
+                                className="mt-2 text-sm font-semibold text-red-700 underline"
+                              >
+                                Tekrar dene
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    <CategoryStepPanel
                       activeCategory={activeCategory}
                       completedCategories={completedCategories}
                       selectedTopLength={selectedTopLength}
@@ -1019,69 +1076,22 @@ const KombinEditor: React.FC = () => {
                         setSelectedOuterwearLength(length);
                         setError(null);
                       }}
-                       isLoading={isLoading}
-                     />
-                     {stylingMode === 'experimental' && (
-                       <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 text-sm text-emerald-900">
-                         <div className="flex items-start justify-between gap-3">
-                           <div>
-                             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">Deneysel mod</p>
-                             <p className="mt-2 font-semibold">{stagedExperimentalGarments.length > 0 ? `${stagedExperimentalGarments.length} parça hazır` : 'Henüz parça seçilmedi'}</p>
-                             <p className="mt-1 text-emerald-800">Parçaları sahnele, sonra tek seferde fal.ai isteği gönder.</p>
-                           </div>
-                           <button
-                             type="button"
-                             onClick={() => setStylingMode('standard')}
-                             className="rounded-full border border-emerald-300 px-3 py-1 text-xs font-semibold text-emerald-800 transition hover:bg-white"
-                           >
-                             Standart moda dön
-                           </button>
-                         </div>
-
-                         {stagedExperimentalGarments.length > 0 && (
-                           <ul className="mt-3 space-y-2 text-emerald-900">
-                             {stagedExperimentalGarments.map((selection) => (
-                               <li key={selection.category} className="flex items-center justify-between rounded-xl bg-white/80 px-3 py-2">
-                                 <span className="font-medium">{selection.name}</span>
-                                 <span className="text-xs uppercase tracking-[0.15em] text-emerald-700">{selection.category}</span>
-                               </li>
-                             ))}
-                           </ul>
-                         )}
-
-                         <div className="mt-4 flex flex-col gap-3">
-                           {isLoading && loadingMessage && (
-                             <p className="rounded-xl bg-white/80 px-3 py-2 text-sm font-medium text-emerald-900">
-                               {loadingMessage}
-                             </p>
-                           )}
-                           <button
-                             type="button"
-                             onClick={() => void handleExperimentalGenerate()}
-                             disabled={isLoading || stagedExperimentalGarments.length === 0}
-                             className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-3 font-semibold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:bg-emerald-300"
-                           >
-                             Deneysel kombini üret
-                           </button>
-                           {error && (
-                             <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-red-700">
-                               <p>{error}</p>
-                               <button
-                                 type="button"
-                                 onClick={() => void handleExperimentalGenerate()}
-                                 className="mt-2 text-sm font-semibold text-red-700 underline"
-                               >
-                                 Tekrar dene
-                               </button>
-                             </div>
-                           )}
-                         </div>
-                       </div>
-                     )}
-                     <ScenePanel
-                      selectedScene={selectedScene}
-                      selectedLighting={selectedLighting}
-                      qualityMode={sceneQualityMode}
+                      isLoading={isLoading}
+                    />
+                    <WardrobePanel
+                      onGarmentSelect={handleGarmentSelect}
+                      onStageGarment={handleStageGarment}
+                      onPinItem={handlePinWardrobeItem}
+                      activeGarmentIds={activeGarmentIds}
+                      isLoading={isLoading}
+                      wardrobe={wardrobe}
+                      activeCategory={activeCategory}
+                      selectionMode={stylingMode}
+                    />
+                    <ScenePanel
+                       selectedScene={selectedScene}
+                       selectedLighting={selectedLighting}
+                       qualityMode={sceneQualityMode}
                       onSelectScene={handleSelectScene}
                       onSelectLighting={setSelectedLighting}
                       onChangeQualityMode={setSceneQualityMode}
@@ -1097,16 +1107,6 @@ const KombinEditor: React.FC = () => {
                       onSelectVariation={setSelectedSceneVariationId}
                       isLoading={isLoading}
                     />
-                     <WardrobePanel
-                       onGarmentSelect={handleGarmentSelect}
-                       onStageGarment={handleStageGarment}
-                       onPinItem={handlePinWardrobeItem}
-                       activeGarmentIds={activeGarmentIds}
-                       isLoading={isLoading}
-                       wardrobe={wardrobe}
-                       activeCategory={activeCategory}
-                       selectionMode={stylingMode}
-                     />
                   </div>
               </aside>
             </main>

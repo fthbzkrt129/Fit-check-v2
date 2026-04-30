@@ -51,8 +51,9 @@ const ScenePanel: React.FC<ScenePanelProps> = ({
   hasCustomScene = false,
 }) => {
   const [isCustomSceneModalOpen, setIsCustomSceneModalOpen] = useState(false);
-  const canGenerate = !disabled && !isLoading && !!selectedScene && !!selectedLighting;
-  const lightingDisabled = disabled || !selectedScene || isLoading;
+  const hasSceneDirection = !!selectedScene || hasCustomScene;
+  const canGenerate = !disabled && !isLoading && hasSceneDirection && !!selectedLighting;
+  const lightingDisabled = disabled || !hasSceneDirection || isLoading;
 
   const handleCustomSceneSubmit = (customPrompt: string) => {
     onSelectCustomScene(customPrompt);

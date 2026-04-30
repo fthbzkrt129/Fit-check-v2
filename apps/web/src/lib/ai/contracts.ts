@@ -107,7 +107,14 @@ export const experimentalRequestSchema = z.object({
     )
     .min(1),
   finalSceneDescription: z.string().trim().optional(),
-  prompt: z.string().trim().min(1)
+  prompt: z.string().trim().min(1),
+  provider: z.literal('gpt-image-2').optional(),
+  imageSize: z.object({
+    width: z.number().int().positive(),
+    height: z.number().int().positive(),
+  }).optional(),
+  quality: z.enum(['low', 'high']).optional(),
+  maxQueueStatusPolls: z.number().int().positive().optional(),
 }).superRefine((payload, ctx) => {
   payload.garments.forEach((garment, index) => {
     if (garment.imageIndex < 2 || garment.imageIndex > payload.imageInputs.length) {
