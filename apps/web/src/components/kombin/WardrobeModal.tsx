@@ -147,7 +147,7 @@ const WardrobePanel: React.FC<WardrobePanelProps> = ({
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-3">
             {visibleWardrobe.map((item) => {
             const isActive = activeGarmentIds.includes(item.id);
-            const canPin = item.source === 'user' && !item.isPinned;
+            const canPin = !item.isPinned;
             return (
                 <div key={item.id} className="relative aspect-square min-w-0">
                 <button

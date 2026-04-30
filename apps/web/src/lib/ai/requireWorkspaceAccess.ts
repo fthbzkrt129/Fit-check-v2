@@ -2,6 +2,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type WorkspaceAccessResult = {
   userId: string;
+  workspaceId: string;
   workspaceSlug: string;
 };
 
@@ -28,6 +29,7 @@ export const requireWorkspaceAccess = async (workspaceSlug: string): Promise<Wor
 
   return {
     userId: user.id,
+    workspaceId: membership.workspace_id,
     workspaceSlug
   };
 };

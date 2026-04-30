@@ -28,7 +28,7 @@ import { getModelSwapReferenceImage } from '@/lib/kombin/modelSwap';
 import { downloadImage } from '@/lib/kombin/downloadImage';
 import { blobUrlToDataUrl } from '@/lib/kombin/imagePersistence';
 import { POSE_OPTIONS } from '@/lib/kombin/poseOptions';
-import { addPinnedWardrobeItem, getPinnedWardrobeItems } from '@/lib/kombin/pinnedWardrobe';
+import { getPinnedWardrobeItems } from '@/lib/kombin/pinnedWardrobe';
 import { saveSession, loadSession, clearSession } from '@/lib/kombin/sessionStorage';
 import { sanitizePersistedWardrobeItems } from '@/lib/kombin/wardrobePersistence';
 import type { SessionData } from '@/lib/kombin/sessionStorage';
@@ -36,6 +36,7 @@ import { saveSessionState, restoreSessionState, clearSessionData } from '@/lib/s
 import type { SessionState } from '@/lib/sessionPersistence';
 import Spinner from '@/components/kombin/Spinner';
 import ModelSwapPanel from '@/components/kombin/ModelSwapPanel';
+import { listPinnedWardrobeItems, pinWardrobeItem } from '@/lib/kombin/services/pinnedWardrobeService';
 
 type WorkspaceMode = 'styling' | 'modelSwap';
 
@@ -106,6 +107,27 @@ const mergeWardrobeItems = (...groups: WardrobeItem[][]) => {
   }
 
   return Array.from(itemsById.values());
+};
+
+const resolveWorkspaceSlug = (locationLike: Pick<Location, 'pathname' | 'hostname'> | null | undefined) => {
+  const pathname = locationLike?.pathname ?? '';
+  const workspaceMatch = pathname.match(/^\/workspace\/([^/]+)/);
+  if (workspaceMatch?.[1]) {
+    return decodeURIComponent(workspaceMatch[1]);
+  }
+
+  const devMatch = pathname.match(/^\/dev\/([^/]+)/);
+  if (devMatch?.[1]) {
+    return decodeURIComponent(devMatch[1]);
+  }
+
+  const hostname = locationLike?.hostname ?? '';
+  const hostParts = hostname.split('.').filter(Boolean);
+  if (hostParts.length >= 3 && hostParts[0]) {
+    return hostParts[0];
+  }
+
+  return null;
 };
 
 const KombinEditor: React.FC = () => {
@@ -220,6 +242,29 @@ const KombinEditor: React.FC = () => {
         ) as ExperimentalSelectionMap,
       );
     }
+  }, []);
+
+  useEffect(() => {
+    const workspaceSlug = resolveWorkspaceSlug(typeof window === 'undefined' ? null : window.location);
+    if (!workspaceSlug) {
+      return;
+    }
+
+    let active = true;
+
+    void listPinnedWardrobeItems(workspaceSlug)
+      .then((items) => {
+        if (!active || items.length === 0) {
+          return;
+        }
+
+        setWardrobe((previous) => mergeWardrobeItems(defaultWardrobe, previous, items));
+      })
+      .catch(() => undefined);
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   // Persist session state on every state change (SESS-01, SESS-02, SESS-03)
@@ -773,14 +818,28 @@ const KombinEditor: React.FC = () => {
   }, [clearExperimentalStatusTimer, currentOutfitIndex, isLoading, modelImageUrl, stagedExperimentalGarments, selectedScene, selectedLighting, customScenePrompt, scheduleExperimentalLoadingStatus, resetExperimentalLoadingStatus]);
 
   const handlePinWardrobeItem = useCallback(async (item: WardrobeItem) => {
-    if (item.source !== 'user' || item.isPinned) {
+    if (item.isPinned) {
       return;
     }
 
-    const persistentUrl = item.url.startsWith('data:image/') ? item.url : await blobUrlToDataUrl(item.url);
-    const pinnedItem = { ...item, url: persistentUrl, isPinned: true };
-    addPinnedWardrobeItem(pinnedItem);
-    setWardrobe((prev) => prev.map((entry) => (entry.id === item.id ? pinnedItem : entry)));
+    const workspaceSlug = resolveWorkspaceSlug(typeof window === 'undefined' ? null : window.location);
+    if (!workspaceSlug) {
+      return;
+    }
+
+    const pinnedItem = await pinWardrobeItem({
+      workspaceSlug,
+      name: item.name,
+      category: item.category,
+      sourceKind: item.source === 'system' ? 'system' : 'uploaded',
+      sourceUrl: item.source === 'system' ? item.url : undefined,
+      systemItemId: item.source === 'system' ? item.id : undefined,
+      imageDataUrl: item.source === 'system'
+        ? undefined
+        : (item.url.startsWith('data:image/') ? item.url : await blobUrlToDataUrl(item.url)),
+    });
+
+    setWardrobe((prev) => mergeWardrobeItems(prev.filter((entry) => entry.id !== item.id), [pinnedItem]));
   }, []);
 
   const handlePoseSelect = useCallback(async (newIndex: number) => {

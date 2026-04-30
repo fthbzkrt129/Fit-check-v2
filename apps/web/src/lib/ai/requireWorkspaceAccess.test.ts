@@ -46,4 +46,40 @@ describe("requireWorkspaceAccess", () => {
 
     expect(createSupabaseServerClientMock).toHaveBeenCalledWith({ allowCookieWrites: false });
   });
+
+  it("returns the workspace id along with the user access result", async () => {
+    createSupabaseServerClientMock.mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: {
+            user: {
+              id: "user-1"
+            }
+          }
+        })
+      },
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              maybeSingle: vi.fn().mockResolvedValue({
+                data: {
+                  workspace_id: "workspace-1",
+                  workspaces: {
+                    slug: "demo"
+                  }
+                }
+              })
+            })
+          })
+        })
+      })
+    });
+
+    await expect(requireWorkspaceAccess("demo")).resolves.toEqual({
+      userId: "user-1",
+      workspaceId: "workspace-1",
+      workspaceSlug: "demo"
+    });
+  });
 });

@@ -12,6 +12,8 @@ const {
   generateIdentityReferenceImageMock,
   generateModelSwapImageMock,
   getPinnedWardrobeItemsMock,
+  listPinnedWardrobeItemsMock,
+  pinWardrobeItemMock,
   restoreSessionStateMock,
   loadSessionMock,
   generateExperimentalOutfitImageMock,
@@ -24,6 +26,8 @@ const {
   generateIdentityReferenceImageMock: vi.fn(),
   generateModelSwapImageMock: vi.fn(),
   getPinnedWardrobeItemsMock: vi.fn<() => WardrobeItem[]>(() => []),
+  listPinnedWardrobeItemsMock: vi.fn(),
+  pinWardrobeItemMock: vi.fn(),
   restoreSessionStateMock: vi.fn<() => SessionState | null>(() => null),
   loadSessionMock: vi.fn<() => SessionData | null>(() => null),
   generateExperimentalOutfitImageMock: vi.fn(),
@@ -47,6 +51,10 @@ vi.mock('@/lib/kombin/services/falService', () => ({
 
 vi.mock('@/lib/kombin/wardrobe', () => ({ defaultWardrobe: [] }));
 vi.mock('@/lib/kombin/pinnedWardrobe', () => ({ addPinnedWardrobeItem: vi.fn(), getPinnedWardrobeItems: () => getPinnedWardrobeItemsMock() }));
+vi.mock('@/lib/kombin/services/pinnedWardrobeService', () => ({
+  listPinnedWardrobeItems: (...args: unknown[]) => listPinnedWardrobeItemsMock(...args),
+  pinWardrobeItem: (...args: unknown[]) => pinWardrobeItemMock(...args),
+}));
 vi.mock('@/lib/kombin/sessionStorage', () => ({ saveSession: vi.fn(), loadSession: () => loadSessionMock(), clearSession: vi.fn() }));
 vi.mock('@/lib/sessionPersistence', () => ({ saveSessionState: vi.fn(), restoreSessionState: () => restoreSessionStateMock(), clearSessionData: vi.fn() }));
 vi.mock('@/lib/kombin/downloadImage', () => ({ downloadImage: vi.fn() }));
@@ -127,7 +135,7 @@ vi.mock('@/components/kombin/CategoryStepPanel', () => ({
 }));
 
 vi.mock('@/components/kombin/WardrobeModal', () => ({
-  default: ({ onGarmentSelect, onStageGarment, wardrobe, selectionMode }: any) => (
+  default: ({ onGarmentSelect, onStageGarment, onPinItem, wardrobe, selectionMode }: any) => (
     <div>
       <div data-testid="wardrobe-count">wardrobe-count {wardrobe.length}</div>
       <button
@@ -152,6 +160,17 @@ vi.mock('@/components/kombin/WardrobeModal', () => ({
         }
       >
         pick-top
+      </button>
+      <button
+        onClick={() => onPinItem({
+          id: 'uploaded-top-1',
+          name: 'Uploaded Top',
+          url: 'blob:http://localhost/uploaded-top',
+          category: 'top',
+          source: 'user',
+        })}
+      >
+        pin-uploaded-top
       </button>
       <button
         onClick={() =>
@@ -193,6 +212,8 @@ describe('KombinEditor', () => {
     cleanup();
     vi.clearAllMocks();
     getPinnedWardrobeItemsMock.mockReturnValue([]);
+    listPinnedWardrobeItemsMock.mockResolvedValue([]);
+    pinWardrobeItemMock.mockReset();
     restoreSessionStateMock.mockReturnValue(null);
     loadSessionMock.mockReturnValue(null);
     generateGptSceneVariationMock.mockReset();
@@ -390,6 +411,54 @@ describe('KombinEditor', () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('wardrobe-count')).toHaveTextContent('1');
+    });
+  });
+
+  it('loads backend pinned wardrobe items on restore and merges them into the wardrobe', async () => {
+    listPinnedWardrobeItemsMock.mockResolvedValueOnce([
+      {
+        id: 'pinned:workspace-1',
+        name: 'Workspace Tee',
+        url: 'https://example.com/workspace-tee.png',
+        category: 'top',
+        source: 'user',
+        isPinned: true,
+      },
+    ]);
+
+    render(<KombinEditor />);
+    fireEvent.click(screen.getByRole('button', { name: 'start-session' }));
+    await screen.findByTestId('display-image');
+
+    await waitFor(() => {
+      expect(screen.getByTestId('wardrobe-count')).toHaveTextContent('1');
+    });
+
+    expect(listPinnedWardrobeItemsMock).toHaveBeenCalled();
+  });
+
+  it('pins an uploaded wardrobe item through the backend pin API', async () => {
+    pinWardrobeItemMock.mockResolvedValueOnce({
+      id: 'pinned:uploaded-top-1',
+      name: 'Uploaded Top',
+      url: 'https://example.com/pinned-uploaded-top.png',
+      category: 'top',
+      source: 'user',
+      isPinned: true,
+    });
+
+    render(<KombinEditor />);
+    fireEvent.click(screen.getByRole('button', { name: 'start-session' }));
+    await screen.findByTestId('display-image');
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'pin-uploaded-top' })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'pin-uploaded-top' }));
+
+    await waitFor(() => {
+      expect(pinWardrobeItemMock).toHaveBeenCalledTimes(1);
     });
   });
 

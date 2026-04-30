@@ -190,6 +190,23 @@ describe('WardrobePanel', () => {
       }));
     });
   });
+
+  it('shows Sabitle for built-in system items', () => {
+    render(
+      <WardrobePanel
+        onGarmentSelect={vi.fn()}
+        onStageGarment={vi.fn()}
+        onPinItem={vi.fn()}
+        activeGarmentIds={[]}
+        isLoading={false}
+        wardrobe={wardrobe}
+        activeCategory="top"
+        selectionMode="standard"
+      />,
+    );
+
+    expect(screen.getAllByRole('button', { name: 'Sabitle' }).length).toBeGreaterThan(0);
+  });
 });
 
 describe('App experimental styling flow', () => {
@@ -201,7 +218,7 @@ describe('App experimental styling flow', () => {
     const deferred = new Promise<string>((_resolve, reject) => {
       rejectDeferred = reject;
     });
-    const generateExperimentalOutfitImage = vi
+    const generateGptExperimentalOutfitImage = vi
       .fn<() => Promise<string>>()
       .mockReturnValueOnce(deferred)
       .mockResolvedValueOnce('https://example.com/experimental-look.png');
@@ -216,7 +233,9 @@ describe('App experimental styling flow', () => {
     }));
 
     vi.doMock('@/lib/kombin/services/falService', () => ({
-      generateExperimentalOutfitImage,
+      generateExperimentalOutfitImage: vi.fn(),
+      generateGptExperimentalOutfitImage,
+      generateGptSceneVariation: vi.fn(),
     }));
 
     vi.doMock('@/lib/kombin/wardrobe', () => ({ defaultWardrobe: wardrobe }));
@@ -294,16 +313,16 @@ describe('App experimental styling flow', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'pick-top-1' }));
     fireEvent.click(screen.getByRole('button', { name: 'pick-top-2' }));
 
-    const submitButton = screen.getByRole('button', { name: 'Deneysel kombini üret' });
+    const submitButton = screen.getByRole('button', { name: 'Üret' });
     fireEvent.click(submitButton);
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(generateExperimentalOutfitImage).toHaveBeenCalledTimes(1);
+      expect(generateGptExperimentalOutfitImage).toHaveBeenCalledTimes(1);
     });
 
     expect(generateVirtualTryOnImage).not.toHaveBeenCalled();
-    const firstRequest = (generateExperimentalOutfitImage as any).mock.calls[0]?.[0] as {
+    const firstRequest = (generateGptExperimentalOutfitImage as any).mock.calls[0]?.[0] as {
       baseModelImage: string;
       garmentSelections: Array<{ id: string; category: string }>;
     };
@@ -315,7 +334,7 @@ describe('App experimental styling flow', () => {
       ],
     });
     expect(screen.getByText('Deneysel kombin hazırlanıyor...')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Deneysel kombini üret' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Üret' })).toBeDisabled();
 
     rejectDeferred?.(new Error('fal request failed'));
 
@@ -326,7 +345,7 @@ describe('App experimental styling flow', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Tekrar dene' }));
 
     await waitFor(() => {
-      expect(generateExperimentalOutfitImage).toHaveBeenCalledTimes(2);
+      expect(generateGptExperimentalOutfitImage).toHaveBeenCalledTimes(2);
     });
   });
 });
