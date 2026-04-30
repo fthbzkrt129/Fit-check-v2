@@ -85,7 +85,7 @@ export const poseRequestSchema = z.object({
 
 export const sceneRequestSchema = z.object({
   workspaceSlug: z.string().trim().min(1),
-  provider: z.enum(['gemini', 'gpt-image-2']).default('gemini'),
+  provider: z.enum(['gpt-image-2']).default('gpt-image-2'),
   baseImage: imageSourceSchema,
   scene: z.enum(["studio", "cafe", "street", "luxury room"]),
   lighting: z.enum(["soft daylight", "golden hour", "dramatic", "editorial"]),
@@ -95,7 +95,7 @@ export const sceneRequestSchema = z.object({
 
 export const experimentalRequestSchema = z.object({
   workspaceSlug: z.string().trim().min(1),
-  provider: z.enum(['wan', 'gpt-image-2']).default('wan'),
+  provider: z.enum(['gpt-image-2', 'wan', 'fal-wan']).default('gpt-image-2'),
   baseModelImage: imageSourceSchema,
   imageInputs: z.array(imageSourceSchema).min(1),
   garments: z
@@ -109,7 +109,13 @@ export const experimentalRequestSchema = z.object({
     )
     .min(1),
   finalSceneDescription: z.string().trim().optional(),
-  prompt: z.string().trim().min(1)
+  prompt: z.string().trim().min(1),
+  imageSize: z.object({
+    width: z.number().int().positive(),
+    height: z.number().int().positive(),
+  }).optional(),
+  quality: z.enum(['low', 'high']).optional(),
+  maxQueueStatusPolls: z.number().int().positive().optional(),
 }).superRefine((payload, ctx) => {
   payload.garments.forEach((garment, index) => {
     if (garment.imageIndex < 2 || garment.imageIndex > payload.imageInputs.length) {

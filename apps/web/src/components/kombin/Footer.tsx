@@ -22,15 +22,23 @@ const Footer: React.FC<FooterProps> = ({ isOnDressingScreen = false }) => {
   const [suggestionIndex, setSuggestionIndex] = useState(0);
 
   useEffect(() => {
+    if (isOnDressingScreen) {
+      return;
+    }
+
     const interval = setInterval(() => {
       setSuggestionIndex((prevIndex) => (prevIndex + 1) % REMIX_SUGGESTIONS.length);
     }, 4000); // Change suggestion every 4 seconds
 
     return () => clearInterval(interval);
-  }, []);
+  }, [isOnDressingScreen]);
+
+  if (isOnDressingScreen) {
+    return null;
+  }
 
   return (
-    <footer className={`fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md border-t border-gray-200/60 p-3 z-50 ${isOnDressingScreen ? 'hidden sm:block' : ''}`}>
+    <footer className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md border-t border-gray-200/60 p-3 z-50">
       <div className="mx-auto flex flex-col sm:flex-row items-center justify-between text-xs text-gray-600 max-w-7xl px-4">
         <p>
           Created by{' '}

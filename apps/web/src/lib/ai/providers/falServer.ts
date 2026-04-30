@@ -135,11 +135,13 @@ const buildFalGptImage2EditInput = (payload: Record<string, unknown>) => {
   };
 };
 
+const isLegacyWanEditPayload = (payload: Record<string, unknown>) => payload.provider === "wan" || payload.provider === "fal-wan";
+
 const resolveFalEndpoint = (payload: Record<string, unknown>) =>
-  payload.provider === "gpt-image-2" ? FAL_GPT_IMAGE_2_EDIT_ENDPOINT : FAL_WAN_EDIT_ENDPOINT;
+  isLegacyWanEditPayload(payload) ? FAL_WAN_EDIT_ENDPOINT : FAL_GPT_IMAGE_2_EDIT_ENDPOINT;
 
 const buildFalEditInput = (payload: Record<string, unknown>) =>
-  payload.provider === "gpt-image-2" ? buildFalGptImage2EditInput(payload) : buildFalWanEditInput(payload);
+  isLegacyWanEditPayload(payload) ? buildFalWanEditInput(payload) : buildFalGptImage2EditInput(payload);
 
 const resolveQueueStatusPolls = (payload: Record<string, unknown>) =>
   typeof payload.maxQueueStatusPolls === "number" && payload.maxQueueStatusPolls > 0
